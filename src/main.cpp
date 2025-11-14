@@ -1,237 +1,111 @@
+
 #include <Arduino.h>
-#include <driver/i2s.h>
-#include "freertos/FreeRTOS.h"
-#include "freertos/message_buffer.h"
-#include <TimeLib.h>
+#include "driver/i2s_std.h"
+#include "driver/gpio.h"
+#include "AudioTools.h"   // using only FIR<float>
 
-//--------------------------INMP441-------------------------------------------------
-#define I2S_WS 25
-#define I2S_SD 32
-#define I2S_SCK 33
-#define SP_LRC 13
-#define SP_DIN 14
-#define SP_BCLK 12  
-#define I2S_SAMPLE_RATE   (11025)  // Частота, Гц
-#define ESP_NOW_MAX_DATA_LEN 32
+// ---------------- I2S pinout (matches your earlier setup) ----------------
+#define I2S_WS    25   // LRCLK / WS
+#define I2S_SD    33   // DIN  (mic -> ESP32)
+#define I2S_SCK   32   // BCLK
+#define I2S_DOUT  35   // DOUT (ESP32 -> amp/DAC)
 
-//------------------------MAX98357A----------------------------------------------------
+// ---------------- Audio parameters ----------------
+#define SAMPLE_RATE      44100
+#define BUFFER_FRAMES    32    // number of L/R frames per read/write (adjust as needed)
 
+// Handles
+static i2s_chan_handle_t tx_handle = nullptr;
+static i2s_chan_handle_t rx_handle = nullptr;
 
-//------------------------Глобальные переменные----------------------------------------------------
-static MessageBufferHandle_t audioMessageBuffer = NULL;      // Буфер обмена сообщениями между задачами
-
-//-------------------------Объявление функций-----------------------------------
-void initMicro();
-void initSpeaker();
-void task_micro(void *arg);
-void task_speaker(void *arg);
-
-// //------------------------Конфиги----------------------------------------------------
-//------------------------MAX98357A----------------------------------------------------
-i2s_config_t i2s_config_speaker = {
-  .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_TX),
-  .sample_rate = I2S_SAMPLE_RATE,
-  .bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT,
-  .channel_format = I2S_CHANNEL_FMT_ONLY_LEFT,
-  .communication_format = I2S_COMM_FORMAT_I2S_MSB,
-  .intr_alloc_flags = 0,
-  .dma_buf_count = 4,
-  .dma_buf_len = ESP_NOW_MAX_DATA_LEN * 2,
-  .use_apll = false
+// ---------------- FIR coefficients (stereo band-pass ~300..3400 Hz, example) ----------------
+static float fir_coef[] = {  1.0f 
+  // -0.001312f, -0.002066f, -0.001226f,  0.001834f,  0.005255f,  0.006243f,
+  //  0.002857f, -0.004488f, -0.012244f, -0.014256f, -0.006573f,  0.010656f,
+  //  0.029334f,  0.039857f,  0.033691f,  0.008575f, -0.027557f, -0.059848f,
+  // -0.073241f, -0.055848f,  0.000000f,  0.083827f,  0.177845f,  0.250000f,
+  //  0.277845f,  0.250000f,  0.177845f,  0.083827f,  0.000000f, -0.055848f,
+  // -0.073241f, -0.059848f, -0.027557f,  0.008575f,  0.033691f,  0.039857f,
+  //  0.029334f,  0.010656f, -0.006573f, -0.014256f, -0.012244f, -0.004488f,
+  //  0.002857f,  0.006243f,  0.005255f,  0.001834f, -0.001226f, -0.002066f,
+  // -0.001312f
 };
+static const size_t FIR_TAPS = sizeof(fir_coef)/sizeof(fir_coef[0]);
 
-static const i2s_pin_config_t pin_config_speaker = {
-  .mck_io_num = -1,
-  .bck_io_num = SP_BCLK,                                 // The bit clock connectiom, goes to pin 27 of ESP32
-  .ws_io_num = SP_LRC,                                  // Word select, also known as word select or left right clock
-  .data_out_num = SP_DIN,                               // Data out from the ESP32, connect to DIN on 38357A
-  .data_in_num = I2S_PIN_NO_CHANGE                  // we are not interested in I2S data into the ESP32
-};
+// Two FIR instances: left/right
+static FIR<float> firL(fir_coef);
+static FIR<float> firR(fir_coef);
 
-//--------------------------МИКРОФОН-------------------------------------------------
+// ---------------- Utilities ----------------
+static inline int16_t clamp16(float y) {
+  if (y > 32767.0f) return 32767;
+  if (y < -32768.0f) return -32768;
+  return (int16_t)lrintf(y);
+}
 
-i2s_config_t i2s_config_micro = {
-    .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_RX), //| I2S_MODE_ADC_BUILT_IN),
-    .sample_rate = I2S_SAMPLE_RATE,
-    .bits_per_sample = i2s_bits_per_sample_t(16),//I2S_BITS_PER_SAMPLE_32BIT, // INMP441 is 24 bits, but it doesn't work if we set 24 bit here.
-    .channel_format = I2S_CHANNEL_FMT_ONLY_LEFT,
-    .communication_format = i2s_comm_format_t(I2S_COMM_FORMAT_I2S | I2S_COMM_FORMAT_I2S_MSB),
-    .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
-    .dma_buf_count = 32,//4,
-    .dma_buf_len = 512,//ESP_NOW_MAX_DATA_LEN * 4, // * 4 for 32 bit.
-    .use_apll = 1,//false,
-    .tx_desc_auto_clear = false,
-    .fixed_mclk = 0,
-};
+// ---------------- I2S setup using ESP-IDF std driver ----------------
+static void setupI2S() {
+  i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_0, I2S_ROLE_MASTER);
+  ESP_ERROR_CHECK(i2s_new_channel(&chan_cfg, &tx_handle, &rx_handle));
 
-i2s_pin_config_t pin_config = {
-    .bck_io_num = I2S_SCK,   // Bit Clock.
-    .ws_io_num = I2S_WS,    // Word Select.
-    .data_out_num = -1,
-    .data_in_num = I2S_SD,  // Data-out of the mic.
-};
+  i2s_std_config_t std_cfg = {
+    .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(SAMPLE_RATE),
+    .slot_cfg = I2S_STD_MSB_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_STEREO),
+    .gpio_cfg = {
+      .mclk = I2S_GPIO_UNUSED,
+      .bclk = (gpio_num_t)GPIO_NUM_4,
+      .ws   = (gpio_num_t)GPIO_NUM_5,
+      .dout = (gpio_num_t)GPIO_NUM_18,
+      .din  = (gpio_num_t)GPIO_NUM_19,
+      .invert_flags = {
+        .mclk_inv = false,
+        .bclk_inv = false,
+        .ws_inv   = false,
+      }
+    },
+  };
 
-//---------------------------------------------------------------------------
-//--------------------------ОСН КОД-------------------------------------------------
-//---------------------------------------------------------------------------
+  ESP_ERROR_CHECK(i2s_channel_init_std_mode(tx_handle, &std_cfg));
+  ESP_ERROR_CHECK(i2s_channel_init_std_mode(rx_handle, &std_cfg));
+  ESP_ERROR_CHECK(i2s_channel_enable(rx_handle));
+  ESP_ERROR_CHECK(i2s_channel_enable(tx_handle));
+}
 
+// ---------------- Arduino ----------------
 void setup() {
-
   Serial.begin(115200);
+  delay(200);
+  setupI2S();
 
-  initMicro();  // Настройка микро конфигами
-  initSpeaker(); //Настройка динамика конфигами
-
-  // Создаем буфер сообщений для передачи аудио семплов между задачами
-  audioMessageBuffer = xMessageBufferCreate(ESP_NOW_MAX_DATA_LEN * 8);
-  if (audioMessageBuffer == NULL) {
-    Serial.println("Error: xMessageBufferCreate failed");
-  }
-  Serial.println("xMessageBufferCreate SUCCESS");
-
-  xTaskCreate(task_micro, "task_micro", 1024 * 2 * 2 * 2, NULL, 1, NULL);
-  xTaskCreate(task_speaker, "task_speaker", 1024 * 2, NULL, 1, NULL);
+  Serial.print("FIR taps: "); Serial.println(FIR_TAPS);
+  Serial.println("i2s_std + AudioTools::FIR stereo pipeline ready.");
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-  
-}
+  static int16_t inBuf[BUFFER_FRAMES * 2];
+  static int16_t outBuf[BUFFER_FRAMES * 2];
 
-//---------------------------------------------------------------------------
-//---------------РЕАЛИЗАЦИИ-----------------------------
-//---------------------------------------------------------------------------
-void initMicro(){
-  if (ESP_OK != i2s_driver_install(I2S_NUM_0, &i2s_config_micro, 0, NULL)) {
-    Serial.println("i2s_driver_install: error");
-  }
-  if (ESP_OK != i2s_set_pin(I2S_NUM_0, &pin_config)) {
-    Serial.println("i2s_set_pin: error");
-  }
-  i2s_zero_dma_buffer(I2S_NUM_0);
-  Serial.println("Setup done.");            
-}
+  size_t bytes_read = 0;
+  if (i2s_channel_read(rx_handle, inBuf, sizeof(inBuf), &bytes_read, 1000) != ESP_OK || bytes_read == 0) return;
 
-void initSpeaker(){
-  if (ESP_OK != i2s_driver_install(I2S_NUM_1, &i2s_config_speaker, 0, NULL)){
-    Serial.println("i2s_driver_install: error");
-  }
-  
-  if (ESP_OK != i2s_set_pin(I2S_NUM_1, &pin_config_speaker)){
-    Serial.println("i2s_set_pin: error");
+  size_t samples = bytes_read / sizeof(int16_t);
+  size_t frames  = samples / 2;
+
+  // stereo per-sample filtering
+  for (size_t i = 0; i < frames; ++i) {
+    size_t li = (i << 1);
+    size_t ri = li + 1;
+
+    float xl = (float)inBuf[li];
+    float xr = (float)inBuf[ri];
+
+    float yl = firL.process(xl);
+    float yr = firR.process(xr);
+
+    outBuf[li] = clamp16(yl);
+    outBuf[ri] = clamp16(yr);
   }
 
-  i2s_zero_dma_buffer(I2S_NUM_1);
-  Serial.println("Setup done.");   
-}
-
-// This is used to scale the audio when things get loud, and gradually increase sensitivity when things go quiet.
-#define RESTING_SCALE 127
-int32_t scale = RESTING_SCALE;
-void task_micro(void *arg)
-{
-  while (true){
-    Serial.println("while true entered");
-    // Read from the DAC. This comes in as signed data with an extra byte.
-    size_t bytesRead = 0;
-    uint8_t buffer32[ESP_NOW_MAX_DATA_LEN * 4] = {0};
-
-    Serial.println("Before the read");
-    i2s_read(I2S_NUM_0, &buffer32, sizeof(buffer32), &bytesRead, 1000);
-    Serial.println("i2s_read SUCCESS");
-    Serial.printf("bytesRead = %d\n", bytesRead); // 0 bytes read!!!
-
-    if (bytesRead <= 0){
-      vTaskDelay(5);
-      continue;
-    }
-    Serial.printf("Time: %d\n", now()); 
-    vTaskDelay(5);  // No delays - makes crushes
-    
-    for(int i=0; i<128; i++) Serial.printf("%d\n", buffer32);
-    int samplesRead = bytesRead / 4;
-    continue;
-    // Convert to 16-bit signed.
-    // It's actually 24-bit, but the lowest byte is just noise, even in a quiet room.
-    // If we go to 16 bit we don't have to worry about extending a sign byte.
-    // Quiet room seems to be values maxing around 7.
-    // Max seems around 300 with me at 0.5m distance talking at normal loudness.
-    int16_t buffer16[ESP_NOW_MAX_DATA_LEN] = {0};
-    for (int i=0; i<samplesRead; i++) {
-        // Offset + 0 is always E0 or 00, regardless of the sign of the other bytes,
-        // because our mic is only 24-bits, so discard it.
-        // Offset + 1 is the LSB of the sample, but is just fuzz, discard it.
-        uint8_t mid = buffer32[i * 4 + 2];
-        uint8_t msb = buffer32[i * 4 + 3];
-        uint16_t raw = (((uint32_t)msb) << 8) + ((uint32_t)mid);
-        memcpy(&buffer16[i], &raw, sizeof(raw)); // Copy so sign bits aren't interfered.
-    }
-
-    // Find the maximum scale.
-    int16_t max = 0;
-    for (int i=0; i<samplesRead; i++) {
-        int16_t val = buffer16[i];
-        if (val < 0) { val = -val; }
-        if (val > max) { max = val; }
-    }
-
-    // Push up the scale if volume went up.
-    if (max > scale) { scale = max; }
-    // Gradually drop the scale when things are quiet.
-    if (max < scale && scale > RESTING_SCALE) { scale -= 300; }
-    if (scale < RESTING_SCALE) { scale = RESTING_SCALE; } // Dropped too far.
-
-    // Scale it to int8s so we aren't transmitting too much data.
-    int8_t buffer8[ESP_NOW_MAX_DATA_LEN] = {0};
-    for (int i=0; i<samplesRead; i++) {
-        int32_t scaled = ((int32_t)buffer16[i]) * 127 / scale;
-        if (scaled <= -127) {
-            buffer8[i] = -127;
-        } else if (scaled >= 127) {
-            buffer8[i] = 127;
-        } else {
-            buffer8[i] = scaled;
-        }
-    }
-
-    // Передаем выборки в буфер сообщений FreeRTOS вместо ESP-NOW.
-    Serial.println("before sent xMessageBufferSend");
-    for(int i=0; i<32; i++) Serial.printf("%d\n",buffer8);
-    Serial.printf("samplesRead = %d\n", samplesRead); // 0 so it causes the fail
-    size_t sent = xMessageBufferSend(audioMessageBuffer, (void *)buffer8, 32, pdMS_TO_TICKS(50)); // Ошибка
-    Serial.println("sent xMessageBufferSend");
-    if (sent != (size_t)samplesRead) {
-      Serial.println("Warning: xMessageBufferSend partial/failed");
-    }
-  }
-}
-
-void task_speaker(void *arg){
-  // Локальный входной буфер для приема данных из MessageBuffer
-  uint8_t incomingRaw[ESP_NOW_MAX_DATA_LEN] = {0};
-
-  while (true) {
-    // Получаем данные из буфера сообщений (блокируемся до поступления данных)
-    size_t received = xMessageBufferReceive(audioMessageBuffer, (void *)incomingRaw, sizeof(incomingRaw), portMAX_DELAY);
-    if (received == 0) {
-      // Ничего не получили (неожиданно при portMAX_DELAY), пробуем дальше
-      continue;
-    }
-
-    // Инициализируем требуемые переменные
-    int8_t *incoming8 = (int8_t *)incomingRaw;
-    int samples = (int)received;
-
-    // Convert it from 8 bit signed to 16 bit unsigned with an 0x80 delta which is what the DAC requires.
-    uint16_t incoming16[ESP_NOW_MAX_DATA_LEN] = {0};
-    for (int i=0; i<samples; i++) {
-        int32_t value = incoming8[i];
-        value += 0x80; // DAC wants unsigned values with a bias, not signed!
-        incoming16[i] = value << 8;
-    }
-
-    // Forward it to the DAC.
-    size_t bytesWritten=0;
-    i2s_write(I2S_NUM_0, incoming16, samples * 2, &bytesWritten, 500);
-  }
+  size_t bytes_written = 0;
+  i2s_channel_write(tx_handle, outBuf, sizeof(outBuf), &bytes_written, 1000);
 }
