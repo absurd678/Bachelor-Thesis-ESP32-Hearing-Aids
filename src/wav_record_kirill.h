@@ -5,12 +5,12 @@
 #define I2S_SD 18
 #define I2S_SCK 4
 #define I2S_PORT I2S_NUM_0
-#define I2S_SAMPLE_RATE   (16000)
+#define I2S_SAMPLE_RATE   (8000)
 #define I2S_SAMPLE_BITS   (16)
-#define I2S_READ_LEN      (16 * 1024) // Read buffer length
+#define I2S_READ_LEN      (32) // For 128 bytes of total buffer size
 #define RECORD_TIME       (20) //Seconds
 #define I2S_CHANNEL_NUM   (2)
-#define FLASH_RECORD_SIZE (I2S_CHANNEL_NUM * I2S_SAMPLE_RATE * (I2S_SAMPLE_BITS / 8) * RECORD_TIME)
+#define FLASH_RECORD_SIZE (I2S_READ_LEN*2)//(I2S_CHANNEL_NUM * I2S_SAMPLE_RATE * (I2S_SAMPLE_BITS / 8) * RECORD_TIME)
 
 File file;
 const char filename[] = "/recording.wav";
@@ -22,6 +22,7 @@ void wavHeader(byte* header, int wavSize){
   header[2] = 'F'; //
   header[3] = 'F'; //
   unsigned int fileSize = wavSize + headerSize - 8; //
+  Serial.printf("fileSize = %d\n", fileSize);
   header[4] = (byte)(fileSize & 0xFF); //
   header[5] = (byte)((fileSize >> 8) & 0xFF); //
   header[6] = (byte)((fileSize >> 16) & 0xFF); // 
@@ -115,7 +116,7 @@ void listSPIFFS(void) {
   }
 
   Serial.println(FPSTR(line));
-  Serial.println();
+  Serial.println("Finished listing");
   delay(1000);
 }
 
@@ -195,6 +196,8 @@ void SPIFFSInit(){
     Serial.println("SPIFFS initialisation failed!");
     while(1) yield();
   }
+  Serial.print("SPIFFS total bytes: ");Serial.println(SPIFFS.totalBytes()); // TODO :  выяснить почему вся ФС занята а файлы не выводятся. И еще зацикливание происходит
+  Serial.print("SPIFFS used bytes: ");Serial.println(SPIFFS.usedBytes());
 
   SPIFFS.remove(filename);
   file = SPIFFS.open(filename, FILE_WRITE);
@@ -206,6 +209,10 @@ void SPIFFSInit(){
   wavHeader(header, FLASH_RECORD_SIZE);
 
   file.write(header, headerSize);
+
+  file.flush();
+  
+
   listSPIFFS();
 }
 
@@ -236,64 +243,68 @@ void i2sInit(){
 }
 
 
-void i2s_adc_data_scale(uint8_t * d_buff, uint8_t* s_buff, uint32_t len)
+void i2s_adc_data_scale(uint8_t *d_buff, int16_t *s_buff, uint32_t len)
 {
     uint32_t j = 0;
-    uint32_t dac_value = 0;
-    for (int i = 0; i < len; i += 2) {
-        dac_value = ((((uint16_t) (s_buff[i + 1] & 0xf) << 8) | ((s_buff[i + 0]))));
+
+    
+    uint32_t samples = len ;
+
+    for (uint32_t i = 0; i < samples; i++) {
+        // Берём 16-битный signed sample
+        int16_t sample = s_buff[i];
+
+        // Приводим к unsigned диапазону (0..65535)
+        uint16_t dac_value = (uint16_t)(sample + 32768);
+
+        // Старший байт ноль (как было раньше)
         d_buff[j++] = 0;
-        d_buff[j++] = dac_value * 256 / 2048; // 256 ---> 1024
+
+        // Масштабирование под 8 бит (аналог твоего *256/2048)
+        d_buff[j++] = dac_value >> 8;
     }
 }
 
-float phi = 5.7;
-  int A = 32767;
-  float pi = 3.141592653589;
+
 void i2s_adc(void *arg)
 {
-    int i2s_read_len = I2S_READ_LEN;
-    int flash_wr_size = 0;
-    size_t bytes_read;
+  int samples = I2S_READ_LEN;
+  int flash_wr_size = 0;
+  size_t bytes_read;
 
-    char* i2s_read_buff = (char*) calloc(i2s_read_len, sizeof(char));
-    uint8_t* flash_write_buff = (uint8_t*) calloc(i2s_read_len, sizeof(char));
+  int16_t* i2s_read_buff = (int16_t*) calloc(samples*2, sizeof(int16_t));
+  int16_t* i2s_filtered_samples = (int16_t*) calloc(samples, sizeof(int16_t));
+  uint8_t* flash_write_buff = (uint8_t*) calloc(samples, sizeof(uint8_t));
+  
+  Serial.println(" *** Recording Start *** ");
+  while (flash_wr_size < FLASH_RECORD_SIZE) {
+    //read data from I2S bus, in this case, from ADC.
+    i2s_read(I2S_PORT, (void*) i2s_read_buff, samples*2, &bytes_read, portMAX_DELAY);
 
-    // i2s_read(I2S_PORT, (void*) i2s_read_buff, i2s_read_len, &bytes_read, portMAX_DELAY);
-    // i2s_read(I2S_PORT, (void*) i2s_read_buff, i2s_read_len, &bytes_read, portMAX_DELAY);
-    
-    Serial.println(" *** Recording Start *** ");
-    while (flash_wr_size < FLASH_RECORD_SIZE) {
-        // //read data from I2S bus, in this case, from ADC.
-        // i2s_read(I2S_PORT, (void*) i2s_read_buff, i2s_read_len, &bytes_read, portMAX_DELAY);
-
-        // //save original data from I2S(ADC) into flash.
-        // i2s_adc_data_scale(flash_write_buff, (uint8_t*)i2s_read_buff, i2s_read_len);
-        // file.write((const byte*) flash_write_buff, i2s_read_len);
-
-        for (int frame=0; frame<I2S_READ_LEN/2; frame++){ //  TODO: забить хуй и вставить фильтр
-          float xl = A*sinf(2*pi*frame/5);
-          float xr = A*sinf(2*pi*frame/5 + phi);
-          i2s_read_buff[frame<<1] = (short)xl;
-          i2s_read_buff[(frame<<1) + 1] = (short)xr;
-        }
-        //save original data from I2S(ADC) into flash.
-        i2s_adc_data_scale(flash_write_buff, (uint8_t*)i2s_read_buff, i2s_read_len);
-        file.write((const byte*) flash_write_buff, i2s_read_len);
-        
-
-        flash_wr_size += i2s_read_len;
-
+    // Filtering
+    for (size_t i = 0; i < samples; ++i) {
+      size_t li = (i << 1);
+      size_t ri = li + 1;
+      i2s_filtered_samples[i] = i2s_read_buff[li] - i2s_read_buff[ri];
     }
-    Serial.println(" *** Recording Finished *** ");
-    file.close();
 
-    free(i2s_read_buff);
-    i2s_read_buff = NULL;
-    free(flash_write_buff);
-    flash_write_buff = NULL;
-    
-    listSPIFFS();
-    vTaskDelete(NULL);
+    //save original data from I2S(ADC) into flash.
+    i2s_adc_data_scale(flash_write_buff, i2s_filtered_samples, samples);
+    file.write((const byte*) flash_write_buff, samples);     
+     file.flush();
+    flash_wr_size += samples*sizeof(int16_t);
+
+    Serial.printf("flash_wr_size % = %.2f\n", (flash_wr_size * 1.0)/(FLASH_RECORD_SIZE * 1.0));
+  }
+  Serial.println(" *** Recording Finished *** ");
+  file.close();
+
+  free(i2s_read_buff);
+  i2s_read_buff = NULL;
+  free(flash_write_buff);
+  flash_write_buff = NULL;
+  
+  listSPIFFS();
+  vTaskDelete(NULL);
 }
 
