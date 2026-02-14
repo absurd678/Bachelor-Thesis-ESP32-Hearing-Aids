@@ -2,8 +2,10 @@
 #include <Arduino.h>
 #include "driver/i2s.h"
 #include "driver/gpio.h"
-// To cooperate with wav_record
-#define DAC_SPEAKER 1
+
+#ifndef DAC_SPEARKER_H
+#define DAC_SPEARKER_H
+#endif
 // Audio parameters
 #define SAMPLE_RATE      44100
 #define BUFFER_FRAMES    32    // number of L/R frames per read/write (adjust as needed)
@@ -172,22 +174,6 @@ size_t record_i2s(int32_t* input, int16_t* output){
     pBufL[i] = apply_filter(yl, w_left);
     pBufR[i] = apply_filter(yr, w_right);
   }
-  return frames;
+  return bytes_read;
 }
 
-// ---------------- Arduino ----------------
-// void setup() {
-//   Serial.begin(115200);
-//   delay(200);
-//   setupI2SMic();
-//   setupI2SSpeaker();
-//   Serial.println("stereo pipeline ready.");
-// }
-
-// void loop() {
-
-//   size_t frames = record_i2s(input, output);
-//   size_t bytes_written = 0;
-//   i2s_write(I2S_NUM_1, output, frames * sizeof(int16_t), &bytes_written, portMAX_DELAY);
-  
-// }
