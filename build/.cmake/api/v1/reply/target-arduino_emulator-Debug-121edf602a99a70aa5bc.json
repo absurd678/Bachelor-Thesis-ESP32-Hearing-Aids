@@ -1,0 +1,473 @@
+{
+	"archive" : {},
+	"artifacts" : 
+	[
+		{
+			"path" : "emulator/libarduino_emulator.a"
+		}
+	],
+	"backtrace" : 1,
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"add_library",
+			"add_definitions",
+			"target_include_directories"
+		],
+		"files" : 
+		[
+			"C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 42,
+				"parent" : 0
+			},
+			{
+				"command" : 1,
+				"file" : 0,
+				"line" : 31,
+				"parent" : 0
+			},
+			{
+				"command" : 2,
+				"file" : 0,
+				"line" : 45,
+				"parent" : 0
+			}
+		]
+	},
+	"compileGroups" : 
+	[
+		{
+			"compileCommandFragments" : 
+			[
+				{
+					"fragment" : "-g -O0"
+				}
+			],
+			"defines" : 
+			[
+				{
+					"backtrace" : 2,
+					"define" : "HOST"
+				}
+			],
+			"includes" : 
+			[
+				{
+					"backtrace" : 3,
+					"path" : "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-API"
+				},
+				{
+					"backtrace" : 3,
+					"path" : "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-Linux/cores/arduino"
+				},
+				{
+					"backtrace" : 3,
+					"path" : "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-Linux/cores/rasperry_pi"
+				},
+				{
+					"backtrace" : 3,
+					"path" : "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-Linux/cores/ftdi"
+				},
+				{
+					"backtrace" : 3,
+					"path" : "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-Linux/libraries"
+				},
+				{
+					"backtrace" : 3,
+					"path" : "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-API/api/deprecated"
+				}
+			],
+			"language" : "CXX",
+			"sourceIndexes" : 
+			[
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6,
+				7,
+				8,
+				9,
+				10,
+				11,
+				12,
+				13,
+				14,
+				15,
+				16,
+				17,
+				18,
+				19,
+				20,
+				21,
+				22,
+				23,
+				24
+			]
+		}
+	],
+	"id" : "arduino_emulator::@1c3256c8de4e75002d5e",
+	"name" : "arduino_emulator",
+	"nameOnDisk" : "libarduino_emulator.a",
+	"paths" : 
+	{
+		"build" : "emulator",
+		"source" : "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src"
+	},
+	"sourceGroups" : 
+	[
+		{
+			"name" : "Source Files",
+			"sourceIndexes" : 
+			[
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6,
+				7,
+				8,
+				9,
+				10,
+				11,
+				12,
+				13,
+				14,
+				15,
+				16,
+				17,
+				18,
+				19,
+				20,
+				21,
+				22,
+				23,
+				24
+			]
+		},
+		{
+			"name" : "Header Files",
+			"sourceIndexes" : 
+			[
+				25,
+				26,
+				27,
+				28,
+				29,
+				30,
+				31,
+				32,
+				33,
+				34,
+				35,
+				36,
+				37,
+				38,
+				39,
+				40,
+				41,
+				42,
+				43,
+				44,
+				45,
+				46,
+				47,
+				48,
+				49
+			]
+		}
+	],
+	"sources" : 
+	[
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-API/api/CanMsg.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-API/api/CanMsgRingbuffer.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-API/api/Common.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-API/api/IPAddress.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-API/api/PluggableUSB.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-API/api/Print.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-API/api/Stream.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-API/api/String.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-Linux/cores/arduino/Arduino.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-Linux/cores/arduino/GPIOWrapper.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-Linux/cores/arduino/I2CWrapper.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-Linux/cores/arduino/Main.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-Linux/cores/arduino/SPIWrapper.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-Linux/cores/arduino/SocketImpl.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-Linux/cores/arduino/UDP.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-Linux/cores/arduino/Unsupported.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-Linux/cores/arduino/WMath.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-Linux/cores/arduino/itoa.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-Linux/cores/arduino/serialib.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-Linux/cores/ftdi/HardwareGPIO_FTDI.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-Linux/cores/ftdi/HardwareI2C_FTDI.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-Linux/cores/ftdi/HardwareSPI_FTDI.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-Linux/cores/rasperry_pi/HardwareGPIO_RPI.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-Linux/cores/rasperry_pi/HardwareI2C_RPI.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-Linux/cores/rasperry_pi/HardwareSPI_RPI.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-API/api/ArduinoAPI.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-API/api/Binary.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-API/api/CanMsg.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-API/api/CanMsgRingbuffer.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-API/api/Client.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-API/api/Common.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-API/api/Compat.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-API/api/DMAPool.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-API/api/HardwareCAN.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-API/api/HardwareI2C.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-API/api/HardwareSPI.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-API/api/HardwareSerial.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-API/api/IPAddress.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-API/api/Interrupts.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-API/api/PluggableUSB.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-API/api/Print.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-API/api/Printable.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-API/api/RingBuffer.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-API/api/Server.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-API/api/Stream.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-API/api/String.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-API/api/USBAPI.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-API/api/Udp.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-API/api/WCharacter.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-API/api/itoa.h",
+			"sourceGroupIndex" : 1
+		}
+	],
+	"type" : "STATIC_LIBRARY"
+}

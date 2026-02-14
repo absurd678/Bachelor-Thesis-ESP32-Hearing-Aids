@@ -1,0 +1,89 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"childIndexes" : 
+					[
+						1
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-.-Debug-d59ba103fd8c534e61a4.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.16"
+					},
+					"projectIndex" : 0,
+					"source" : "."
+				},
+				{
+					"build" : "emulator",
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-emulator-Debug-5db2f033a57a4e99fe3b.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.11"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 1,
+					"source" : "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src",
+					"targetIndexes" : 
+					[
+						0
+					]
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"childIndexes" : 
+					[
+						1
+					],
+					"directoryIndexes" : 
+					[
+						0
+					],
+					"name" : "arduino-audio-tools"
+				},
+				{
+					"directoryIndexes" : 
+					[
+						1
+					],
+					"name" : "arduino_emulator",
+					"parentIndex" : 0,
+					"targetIndexes" : 
+					[
+						0
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 1,
+					"id" : "arduino_emulator::@1c3256c8de4e75002d5e",
+					"jsonFile" : "target-arduino_emulator-Debug-121edf602a99a70aa5bc.json",
+					"name" : "arduino_emulator",
+					"projectIndex" : 1
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build",
+		"source" : "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/lib/arduino-audio-tools"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 8
+	}
+}

@@ -1,0 +1,152 @@
+[
+{
+  "directory": "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/emulator",
+  "command": "C:\\msys64\\ucrt64\\bin\\g++.exe -DHOST @CMakeFiles/arduino_emulator.dir/includes_CXX.rsp -g -O0 -o CMakeFiles\\arduino_emulator.dir\\ArduinoCore-API\\api\\CanMsg.cpp.obj -c \"C:\\Users\\Artem\\Documents\\PlatformIO\\Projects\\Hearing aids ESP32\\build\\_deps\\arduino_emulator-src\\ArduinoCore-API\\api\\CanMsg.cpp\"",
+  "file": "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-API/api/CanMsg.cpp",
+  "output": "emulator/CMakeFiles/arduino_emulator.dir/ArduinoCore-API/api/CanMsg.cpp.obj"
+},
+{
+  "directory": "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/emulator",
+  "command": "C:\\msys64\\ucrt64\\bin\\g++.exe -DHOST @CMakeFiles/arduino_emulator.dir/includes_CXX.rsp -g -O0 -o CMakeFiles\\arduino_emulator.dir\\ArduinoCore-API\\api\\CanMsgRingbuffer.cpp.obj -c \"C:\\Users\\Artem\\Documents\\PlatformIO\\Projects\\Hearing aids ESP32\\build\\_deps\\arduino_emulator-src\\ArduinoCore-API\\api\\CanMsgRingbuffer.cpp\"",
+  "file": "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-API/api/CanMsgRingbuffer.cpp",
+  "output": "emulator/CMakeFiles/arduino_emulator.dir/ArduinoCore-API/api/CanMsgRingbuffer.cpp.obj"
+},
+{
+  "directory": "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/emulator",
+  "command": "C:\\msys64\\ucrt64\\bin\\g++.exe -DHOST @CMakeFiles/arduino_emulator.dir/includes_CXX.rsp -g -O0 -o CMakeFiles\\arduino_emulator.dir\\ArduinoCore-API\\api\\Common.cpp.obj -c \"C:\\Users\\Artem\\Documents\\PlatformIO\\Projects\\Hearing aids ESP32\\build\\_deps\\arduino_emulator-src\\ArduinoCore-API\\api\\Common.cpp\"",
+  "file": "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-API/api/Common.cpp",
+  "output": "emulator/CMakeFiles/arduino_emulator.dir/ArduinoCore-API/api/Common.cpp.obj"
+},
+{
+  "directory": "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/emulator",
+  "command": "C:\\msys64\\ucrt64\\bin\\g++.exe -DHOST @CMakeFiles/arduino_emulator.dir/includes_CXX.rsp -g -O0 -o CMakeFiles\\arduino_emulator.dir\\ArduinoCore-API\\api\\IPAddress.cpp.obj -c \"C:\\Users\\Artem\\Documents\\PlatformIO\\Projects\\Hearing aids ESP32\\build\\_deps\\arduino_emulator-src\\ArduinoCore-API\\api\\IPAddress.cpp\"",
+  "file": "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-API/api/IPAddress.cpp",
+  "output": "emulator/CMakeFiles/arduino_emulator.dir/ArduinoCore-API/api/IPAddress.cpp.obj"
+},
+{
+  "directory": "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/emulator",
+  "command": "C:\\msys64\\ucrt64\\bin\\g++.exe -DHOST @CMakeFiles/arduino_emulator.dir/includes_CXX.rsp -g -O0 -o CMakeFiles\\arduino_emulator.dir\\ArduinoCore-API\\api\\PluggableUSB.cpp.obj -c \"C:\\Users\\Artem\\Documents\\PlatformIO\\Projects\\Hearing aids ESP32\\build\\_deps\\arduino_emulator-src\\ArduinoCore-API\\api\\PluggableUSB.cpp\"",
+  "file": "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-API/api/PluggableUSB.cpp",
+  "output": "emulator/CMakeFiles/arduino_emulator.dir/ArduinoCore-API/api/PluggableUSB.cpp.obj"
+},
+{
+  "directory": "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/emulator",
+  "command": "C:\\msys64\\ucrt64\\bin\\g++.exe -DHOST @CMakeFiles/arduino_emulator.dir/includes_CXX.rsp -g -O0 -o CMakeFiles\\arduino_emulator.dir\\ArduinoCore-API\\api\\Print.cpp.obj -c \"C:\\Users\\Artem\\Documents\\PlatformIO\\Projects\\Hearing aids ESP32\\build\\_deps\\arduino_emulator-src\\ArduinoCore-API\\api\\Print.cpp\"",
+  "file": "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-API/api/Print.cpp",
+  "output": "emulator/CMakeFiles/arduino_emulator.dir/ArduinoCore-API/api/Print.cpp.obj"
+},
+{
+  "directory": "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/emulator",
+  "command": "C:\\msys64\\ucrt64\\bin\\g++.exe -DHOST @CMakeFiles/arduino_emulator.dir/includes_CXX.rsp -g -O0 -o CMakeFiles\\arduino_emulator.dir\\ArduinoCore-API\\api\\Stream.cpp.obj -c \"C:\\Users\\Artem\\Documents\\PlatformIO\\Projects\\Hearing aids ESP32\\build\\_deps\\arduino_emulator-src\\ArduinoCore-API\\api\\Stream.cpp\"",
+  "file": "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-API/api/Stream.cpp",
+  "output": "emulator/CMakeFiles/arduino_emulator.dir/ArduinoCore-API/api/Stream.cpp.obj"
+},
+{
+  "directory": "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/emulator",
+  "command": "C:\\msys64\\ucrt64\\bin\\g++.exe -DHOST @CMakeFiles/arduino_emulator.dir/includes_CXX.rsp -g -O0 -o CMakeFiles\\arduino_emulator.dir\\ArduinoCore-API\\api\\String.cpp.obj -c \"C:\\Users\\Artem\\Documents\\PlatformIO\\Projects\\Hearing aids ESP32\\build\\_deps\\arduino_emulator-src\\ArduinoCore-API\\api\\String.cpp\"",
+  "file": "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-API/api/String.cpp",
+  "output": "emulator/CMakeFiles/arduino_emulator.dir/ArduinoCore-API/api/String.cpp.obj"
+},
+{
+  "directory": "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/emulator",
+  "command": "C:\\msys64\\ucrt64\\bin\\g++.exe -DHOST @CMakeFiles/arduino_emulator.dir/includes_CXX.rsp -g -O0 -o CMakeFiles\\arduino_emulator.dir\\ArduinoCore-Linux\\cores\\arduino\\Arduino.cpp.obj -c \"C:\\Users\\Artem\\Documents\\PlatformIO\\Projects\\Hearing aids ESP32\\build\\_deps\\arduino_emulator-src\\ArduinoCore-Linux\\cores\\arduino\\Arduino.cpp\"",
+  "file": "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-Linux/cores/arduino/Arduino.cpp",
+  "output": "emulator/CMakeFiles/arduino_emulator.dir/ArduinoCore-Linux/cores/arduino/Arduino.cpp.obj"
+},
+{
+  "directory": "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/emulator",
+  "command": "C:\\msys64\\ucrt64\\bin\\g++.exe -DHOST @CMakeFiles/arduino_emulator.dir/includes_CXX.rsp -g -O0 -o CMakeFiles\\arduino_emulator.dir\\ArduinoCore-Linux\\cores\\arduino\\GPIOWrapper.cpp.obj -c \"C:\\Users\\Artem\\Documents\\PlatformIO\\Projects\\Hearing aids ESP32\\build\\_deps\\arduino_emulator-src\\ArduinoCore-Linux\\cores\\arduino\\GPIOWrapper.cpp\"",
+  "file": "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-Linux/cores/arduino/GPIOWrapper.cpp",
+  "output": "emulator/CMakeFiles/arduino_emulator.dir/ArduinoCore-Linux/cores/arduino/GPIOWrapper.cpp.obj"
+},
+{
+  "directory": "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/emulator",
+  "command": "C:\\msys64\\ucrt64\\bin\\g++.exe -DHOST @CMakeFiles/arduino_emulator.dir/includes_CXX.rsp -g -O0 -o CMakeFiles\\arduino_emulator.dir\\ArduinoCore-Linux\\cores\\arduino\\I2CWrapper.cpp.obj -c \"C:\\Users\\Artem\\Documents\\PlatformIO\\Projects\\Hearing aids ESP32\\build\\_deps\\arduino_emulator-src\\ArduinoCore-Linux\\cores\\arduino\\I2CWrapper.cpp\"",
+  "file": "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-Linux/cores/arduino/I2CWrapper.cpp",
+  "output": "emulator/CMakeFiles/arduino_emulator.dir/ArduinoCore-Linux/cores/arduino/I2CWrapper.cpp.obj"
+},
+{
+  "directory": "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/emulator",
+  "command": "C:\\msys64\\ucrt64\\bin\\g++.exe -DHOST @CMakeFiles/arduino_emulator.dir/includes_CXX.rsp -g -O0 -o CMakeFiles\\arduino_emulator.dir\\ArduinoCore-Linux\\cores\\arduino\\Main.cpp.obj -c \"C:\\Users\\Artem\\Documents\\PlatformIO\\Projects\\Hearing aids ESP32\\build\\_deps\\arduino_emulator-src\\ArduinoCore-Linux\\cores\\arduino\\Main.cpp\"",
+  "file": "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-Linux/cores/arduino/Main.cpp",
+  "output": "emulator/CMakeFiles/arduino_emulator.dir/ArduinoCore-Linux/cores/arduino/Main.cpp.obj"
+},
+{
+  "directory": "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/emulator",
+  "command": "C:\\msys64\\ucrt64\\bin\\g++.exe -DHOST @CMakeFiles/arduino_emulator.dir/includes_CXX.rsp -g -O0 -o CMakeFiles\\arduino_emulator.dir\\ArduinoCore-Linux\\cores\\arduino\\SPIWrapper.cpp.obj -c \"C:\\Users\\Artem\\Documents\\PlatformIO\\Projects\\Hearing aids ESP32\\build\\_deps\\arduino_emulator-src\\ArduinoCore-Linux\\cores\\arduino\\SPIWrapper.cpp\"",
+  "file": "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-Linux/cores/arduino/SPIWrapper.cpp",
+  "output": "emulator/CMakeFiles/arduino_emulator.dir/ArduinoCore-Linux/cores/arduino/SPIWrapper.cpp.obj"
+},
+{
+  "directory": "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/emulator",
+  "command": "C:\\msys64\\ucrt64\\bin\\g++.exe -DHOST @CMakeFiles/arduino_emulator.dir/includes_CXX.rsp -g -O0 -o CMakeFiles\\arduino_emulator.dir\\ArduinoCore-Linux\\cores\\arduino\\SocketImpl.cpp.obj -c \"C:\\Users\\Artem\\Documents\\PlatformIO\\Projects\\Hearing aids ESP32\\build\\_deps\\arduino_emulator-src\\ArduinoCore-Linux\\cores\\arduino\\SocketImpl.cpp\"",
+  "file": "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-Linux/cores/arduino/SocketImpl.cpp",
+  "output": "emulator/CMakeFiles/arduino_emulator.dir/ArduinoCore-Linux/cores/arduino/SocketImpl.cpp.obj"
+},
+{
+  "directory": "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/emulator",
+  "command": "C:\\msys64\\ucrt64\\bin\\g++.exe -DHOST @CMakeFiles/arduino_emulator.dir/includes_CXX.rsp -g -O0 -o CMakeFiles\\arduino_emulator.dir\\ArduinoCore-Linux\\cores\\arduino\\UDP.cpp.obj -c \"C:\\Users\\Artem\\Documents\\PlatformIO\\Projects\\Hearing aids ESP32\\build\\_deps\\arduino_emulator-src\\ArduinoCore-Linux\\cores\\arduino\\UDP.cpp\"",
+  "file": "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-Linux/cores/arduino/UDP.cpp",
+  "output": "emulator/CMakeFiles/arduino_emulator.dir/ArduinoCore-Linux/cores/arduino/UDP.cpp.obj"
+},
+{
+  "directory": "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/emulator",
+  "command": "C:\\msys64\\ucrt64\\bin\\g++.exe -DHOST @CMakeFiles/arduino_emulator.dir/includes_CXX.rsp -g -O0 -o CMakeFiles\\arduino_emulator.dir\\ArduinoCore-Linux\\cores\\arduino\\Unsupported.cpp.obj -c \"C:\\Users\\Artem\\Documents\\PlatformIO\\Projects\\Hearing aids ESP32\\build\\_deps\\arduino_emulator-src\\ArduinoCore-Linux\\cores\\arduino\\Unsupported.cpp\"",
+  "file": "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-Linux/cores/arduino/Unsupported.cpp",
+  "output": "emulator/CMakeFiles/arduino_emulator.dir/ArduinoCore-Linux/cores/arduino/Unsupported.cpp.obj"
+},
+{
+  "directory": "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/emulator",
+  "command": "C:\\msys64\\ucrt64\\bin\\g++.exe -DHOST @CMakeFiles/arduino_emulator.dir/includes_CXX.rsp -g -O0 -o CMakeFiles\\arduino_emulator.dir\\ArduinoCore-Linux\\cores\\arduino\\WMath.cpp.obj -c \"C:\\Users\\Artem\\Documents\\PlatformIO\\Projects\\Hearing aids ESP32\\build\\_deps\\arduino_emulator-src\\ArduinoCore-Linux\\cores\\arduino\\WMath.cpp\"",
+  "file": "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-Linux/cores/arduino/WMath.cpp",
+  "output": "emulator/CMakeFiles/arduino_emulator.dir/ArduinoCore-Linux/cores/arduino/WMath.cpp.obj"
+},
+{
+  "directory": "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/emulator",
+  "command": "C:\\msys64\\ucrt64\\bin\\g++.exe -DHOST @CMakeFiles/arduino_emulator.dir/includes_CXX.rsp -g -O0 -o CMakeFiles\\arduino_emulator.dir\\ArduinoCore-Linux\\cores\\arduino\\itoa.cpp.obj -c \"C:\\Users\\Artem\\Documents\\PlatformIO\\Projects\\Hearing aids ESP32\\build\\_deps\\arduino_emulator-src\\ArduinoCore-Linux\\cores\\arduino\\itoa.cpp\"",
+  "file": "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-Linux/cores/arduino/itoa.cpp",
+  "output": "emulator/CMakeFiles/arduino_emulator.dir/ArduinoCore-Linux/cores/arduino/itoa.cpp.obj"
+},
+{
+  "directory": "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/emulator",
+  "command": "C:\\msys64\\ucrt64\\bin\\g++.exe -DHOST @CMakeFiles/arduino_emulator.dir/includes_CXX.rsp -g -O0 -o CMakeFiles\\arduino_emulator.dir\\ArduinoCore-Linux\\cores\\arduino\\serialib.cpp.obj -c \"C:\\Users\\Artem\\Documents\\PlatformIO\\Projects\\Hearing aids ESP32\\build\\_deps\\arduino_emulator-src\\ArduinoCore-Linux\\cores\\arduino\\serialib.cpp\"",
+  "file": "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-Linux/cores/arduino/serialib.cpp",
+  "output": "emulator/CMakeFiles/arduino_emulator.dir/ArduinoCore-Linux/cores/arduino/serialib.cpp.obj"
+},
+{
+  "directory": "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/emulator",
+  "command": "C:\\msys64\\ucrt64\\bin\\g++.exe -DHOST @CMakeFiles/arduino_emulator.dir/includes_CXX.rsp -g -O0 -o CMakeFiles\\arduino_emulator.dir\\ArduinoCore-Linux\\cores\\ftdi\\HardwareGPIO_FTDI.cpp.obj -c \"C:\\Users\\Artem\\Documents\\PlatformIO\\Projects\\Hearing aids ESP32\\build\\_deps\\arduino_emulator-src\\ArduinoCore-Linux\\cores\\ftdi\\HardwareGPIO_FTDI.cpp\"",
+  "file": "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-Linux/cores/ftdi/HardwareGPIO_FTDI.cpp",
+  "output": "emulator/CMakeFiles/arduino_emulator.dir/ArduinoCore-Linux/cores/ftdi/HardwareGPIO_FTDI.cpp.obj"
+},
+{
+  "directory": "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/emulator",
+  "command": "C:\\msys64\\ucrt64\\bin\\g++.exe -DHOST @CMakeFiles/arduino_emulator.dir/includes_CXX.rsp -g -O0 -o CMakeFiles\\arduino_emulator.dir\\ArduinoCore-Linux\\cores\\ftdi\\HardwareI2C_FTDI.cpp.obj -c \"C:\\Users\\Artem\\Documents\\PlatformIO\\Projects\\Hearing aids ESP32\\build\\_deps\\arduino_emulator-src\\ArduinoCore-Linux\\cores\\ftdi\\HardwareI2C_FTDI.cpp\"",
+  "file": "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-Linux/cores/ftdi/HardwareI2C_FTDI.cpp",
+  "output": "emulator/CMakeFiles/arduino_emulator.dir/ArduinoCore-Linux/cores/ftdi/HardwareI2C_FTDI.cpp.obj"
+},
+{
+  "directory": "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/emulator",
+  "command": "C:\\msys64\\ucrt64\\bin\\g++.exe -DHOST @CMakeFiles/arduino_emulator.dir/includes_CXX.rsp -g -O0 -o CMakeFiles\\arduino_emulator.dir\\ArduinoCore-Linux\\cores\\ftdi\\HardwareSPI_FTDI.cpp.obj -c \"C:\\Users\\Artem\\Documents\\PlatformIO\\Projects\\Hearing aids ESP32\\build\\_deps\\arduino_emulator-src\\ArduinoCore-Linux\\cores\\ftdi\\HardwareSPI_FTDI.cpp\"",
+  "file": "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-Linux/cores/ftdi/HardwareSPI_FTDI.cpp",
+  "output": "emulator/CMakeFiles/arduino_emulator.dir/ArduinoCore-Linux/cores/ftdi/HardwareSPI_FTDI.cpp.obj"
+},
+{
+  "directory": "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/emulator",
+  "command": "C:\\msys64\\ucrt64\\bin\\g++.exe -DHOST @CMakeFiles/arduino_emulator.dir/includes_CXX.rsp -g -O0 -o CMakeFiles\\arduino_emulator.dir\\ArduinoCore-Linux\\cores\\rasperry_pi\\HardwareGPIO_RPI.cpp.obj -c \"C:\\Users\\Artem\\Documents\\PlatformIO\\Projects\\Hearing aids ESP32\\build\\_deps\\arduino_emulator-src\\ArduinoCore-Linux\\cores\\rasperry_pi\\HardwareGPIO_RPI.cpp\"",
+  "file": "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-Linux/cores/rasperry_pi/HardwareGPIO_RPI.cpp",
+  "output": "emulator/CMakeFiles/arduino_emulator.dir/ArduinoCore-Linux/cores/rasperry_pi/HardwareGPIO_RPI.cpp.obj"
+},
+{
+  "directory": "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/emulator",
+  "command": "C:\\msys64\\ucrt64\\bin\\g++.exe -DHOST @CMakeFiles/arduino_emulator.dir/includes_CXX.rsp -g -O0 -o CMakeFiles\\arduino_emulator.dir\\ArduinoCore-Linux\\cores\\rasperry_pi\\HardwareI2C_RPI.cpp.obj -c \"C:\\Users\\Artem\\Documents\\PlatformIO\\Projects\\Hearing aids ESP32\\build\\_deps\\arduino_emulator-src\\ArduinoCore-Linux\\cores\\rasperry_pi\\HardwareI2C_RPI.cpp\"",
+  "file": "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-Linux/cores/rasperry_pi/HardwareI2C_RPI.cpp",
+  "output": "emulator/CMakeFiles/arduino_emulator.dir/ArduinoCore-Linux/cores/rasperry_pi/HardwareI2C_RPI.cpp.obj"
+},
+{
+  "directory": "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/emulator",
+  "command": "C:\\msys64\\ucrt64\\bin\\g++.exe -DHOST @CMakeFiles/arduino_emulator.dir/includes_CXX.rsp -g -O0 -o CMakeFiles\\arduino_emulator.dir\\ArduinoCore-Linux\\cores\\rasperry_pi\\HardwareSPI_RPI.cpp.obj -c \"C:\\Users\\Artem\\Documents\\PlatformIO\\Projects\\Hearing aids ESP32\\build\\_deps\\arduino_emulator-src\\ArduinoCore-Linux\\cores\\rasperry_pi\\HardwareSPI_RPI.cpp\"",
+  "file": "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-Linux/cores/rasperry_pi/HardwareSPI_RPI.cpp",
+  "output": "emulator/CMakeFiles/arduino_emulator.dir/ArduinoCore-Linux/cores/rasperry_pi/HardwareSPI_RPI.cpp.obj"
+}
+]

@@ -1,0 +1,65 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"install"
+		],
+		"files" : 
+		[
+			"C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 55,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 60,
+				"parent" : 0
+			}
+		]
+	},
+	"installers" : 
+	[
+		{
+			"backtrace" : 1,
+			"component" : "Unspecified",
+			"destination" : "include/arduino/api",
+			"paths" : 
+			[
+				{
+					"from" : "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-API/api",
+					"to" : "."
+				}
+			],
+			"type" : "directory"
+		},
+		{
+			"backtrace" : 2,
+			"component" : "Unspecified",
+			"destination" : "include/arduino",
+			"paths" : 
+			[
+				{
+					"from" : "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src/ArduinoCore-Linux/cores/arduino",
+					"to" : "."
+				}
+			],
+			"type" : "directory"
+		}
+	],
+	"paths" : 
+	{
+		"build" : "emulator",
+		"source" : "C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-src"
+	}
+}
