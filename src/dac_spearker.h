@@ -11,17 +11,17 @@
 #define BUFFER_FRAMES    32    // number of L/R frames per read/write (adjust as needed)
 #define MU 0.00005f // множитель сходимости для LMS фильтра
 //пины для INMP44
-#define I2S_MIC_WS GPIO_NUM_5
-#define I2S_MIC_SCK GPIO_NUM_4
-#define I2S_MIC_SD GPIO_NUM_18
+#define I2S_MIC_WS GPIO_NUM_25
+#define I2S_MIC_SCK GPIO_NUM_32
+#define I2S_MIC_SD GPIO_NUM_33
 //пины для MAX98357A
-#define I2S_SPK_WS GPIO_NUM_5
-#define I2S_SPK_SCK GPIO_NUM_4
-#define I2S_SPK_SD GPIO_NUM_18
+#define I2S_SPK_WS GPIO_NUM_25
+#define I2S_SPK_SCK GPIO_NUM_32
+#define I2S_SPK_SD GPIO_NUM_33
 #define bufer_i2s_lenb 512
- // LRC - D5 -- соответствие пинов для справки
-// BCLK - D4
-// DIN - D18
+ // LRC - I2S_SPK_WS -- соответствие пинов для справки
+// BCLK - I2S_SPK_SCK
+// DIN - I2S_SPK_SD
 // GAIN - GND 
 // Vin - 5V
 
