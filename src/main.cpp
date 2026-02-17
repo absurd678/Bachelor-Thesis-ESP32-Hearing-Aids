@@ -1,5 +1,8 @@
 #include "dac_spearker.h"
-#include "sd_wav.h" // if don't need SD support - comment it
+//#include "sd_wav.h" // if don't need SD support - comment it
+
+int32_t input[BUFFER_FRAMES * 2]; // mic in
+int16_t output[BUFFER_FRAMES]; // speaker out
 
 // ---------------- Arduino ----------------
 void setup() {
@@ -30,13 +33,11 @@ void setup() {
 }
 
 void loop() {
-#ifdef DAC_SPEAKER_H // Работаем без SD
-    #ifndef SD_WAV_H
+
   size_t frames = record_i2s(input, output);
   size_t bytes_written = 0;
   i2s_write(I2S_NUM_1, output, frames * sizeof(int16_t), &bytes_written, portMAX_DELAY);
-    #endif
-#endif
+
 #ifdef SD_WAV_H // Filter and SD
   // Обработка нажатия кнопки
   if (buttonPressed) {

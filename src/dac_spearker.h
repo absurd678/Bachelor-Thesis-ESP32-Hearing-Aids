@@ -36,8 +36,7 @@ float w_right[] = { // right
 };
 
 static const size_t FILTER_ORDER = sizeof(w_left)/sizeof(w_left[0]);
-int32_t input[BUFFER_FRAMES * 2]; // mic in
-int16_t output[BUFFER_FRAMES]; // speaker out
+
 float pBufL[BUFFER_FRAMES] = {0}; // filtered signal saved
 float pBufR[BUFFER_FRAMES] = {0}; // filtered signal saved
 float error_array_left_fir[FILTER_ORDER]; // left filter error
@@ -85,11 +84,11 @@ int16_t calc_error_make_y(float input, float prev_val_dir, float prev_val_inv, f
 }
 
 float apply_filter(float signal, float w_coeffs[FILTER_ORDER]){ // применить фильтр полосовой, отказ от audiotools
-  float output = 0.0f;
+  float output_val = 0.0f;
   for (int i=0; i<FILTER_ORDER; i++){
-    output += signal*w_coeffs[i];
+    output_val += signal*w_coeffs[i];
   }
-  return output;
+  return output_val;
 }
 
 
