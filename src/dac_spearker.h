@@ -145,13 +145,10 @@ void setupI2SSpeaker() {
 
 size_t record_i2s(int32_t* input, int16_t* output){
   size_t bytes_read = 0;
-  i2s_read(I2S_NUM_0, input, sizeof(input), &bytes_read, portMAX_DELAY);
+  i2s_read(I2S_NUM_0, input, BUFFER_FRAMES * 2 * sizeof(int32_t), &bytes_read, portMAX_DELAY);
 
   size_t samples = bytes_read / sizeof(int32_t);
   size_t frames  = samples / 2;
-  if (frames > 0){
-    Serial.println("frames > 0");
-  }
 
   // stereo per-sample filtering
   for (size_t i = 0; i < frames; ++i) {
@@ -173,6 +170,7 @@ size_t record_i2s(int32_t* input, int16_t* output){
     pBufL[i] = apply_filter(yl, w_left);
     pBufR[i] = apply_filter(yr, w_right);
   }
-  return bytes_read;
+
+  return frames;
 }
 

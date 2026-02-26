@@ -35,6 +35,7 @@ void setup() {
 void loop() {
 
   size_t frames = record_i2s(input, output);
+  
   size_t bytes_written = 0;
   i2s_write(I2S_NUM_1, output, frames * sizeof(int16_t), &bytes_written, portMAX_DELAY);
 
