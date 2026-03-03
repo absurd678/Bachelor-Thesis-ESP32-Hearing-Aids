@@ -1,0 +1,22 @@
+{
+    "name": "nnom_core",
+    "version": "1.0.0",
+    "description": "NNOM neural network library",
+    "keywords": "neural-network, machine-learning, tensorflow",
+    "authors": {
+      "name": "Jianjia Ma",
+      "email": "majianjia@live.com"
+    },
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/majianjia/nnom"
+    },
+    "build": {
+      "includeDir": "inc",
+      "srcDir": "src",
+      "flags": [
+        "-I inc",
+        "-I port"
+      ]
+    }
+  }
