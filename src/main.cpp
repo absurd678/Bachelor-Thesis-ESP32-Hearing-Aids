@@ -4,17 +4,17 @@
 #include "driver/gpio.h"
 
 // Audio parameters
-#define SAMPLE_RATE      44100
+#define SAMPLE_RATE      48000
 #define BUFFER_FRAMES    32    // number of L/R frames per read/write (adjust as needed)
 #define MU 0.00005f // множитель сходимости для LMS фильтра
 //пины для INMP441
-#define I2S_MIC_WS GPIO_NUM_5
-#define I2S_MIC_SCK GPIO_NUM_4
-#define I2S_MIC_SD GPIO_NUM_18
+#define I2S_MIC_WS GPIO_NUM_15
+#define I2S_MIC_SCK GPIO_NUM_14
+#define I2S_MIC_SD GPIO_NUM_32
 //пины для MAX98357A
-#define I2S_SPK_WS GPIO_NUM_21
-#define I2S_SPK_SCK GPIO_NUM_23
-#define I2S_SPK_SD GPIO_NUM_22
+#define I2S_SPK_WS GPIO_NUM_26
+#define I2S_SPK_SCK GPIO_NUM_27
+#define I2S_SPK_SD GPIO_NUM_25
 #define bufer_i2s_lenb 512
  // LRC - D5 -- соответствие пинов для справки
 // BCLK - D4
@@ -33,7 +33,7 @@ float w_right[] = { // кэфы для правого киха
 };
 
 static const size_t FILTER_ORDER = sizeof(w_left)/sizeof(w_left[0]);
-const float GAIN = 4.0f; // потом можно менять 1...10
+const float GAIN = 1.0f; // потом можно менять 1...10
 float var_gain = GAIN;
 uint32_t counter = 0; // Итеративное изменение GAIN каждые 10 секунд
 // ---------------- Utilities ----------------
@@ -48,7 +48,7 @@ float normalize(int32_t value) { // to make int32 be in the range of -1, 1
 }
 
 int16_t normalize_speaker(float value){ // normalize a value for max chip
-  return clamp16((int16_t)(value*32767.0f*SAMPLE_RATE));
+  return clamp16((int16_t)(value*32767.0f));//*SAMPLE_RATE));
 }
 
 void recalc_fir(float w_coeffs[FILTER_ORDER], float error, float x_signal[BUFFER_FRAMES]){ // файнинг адаптивного фильтра для одного семпла
