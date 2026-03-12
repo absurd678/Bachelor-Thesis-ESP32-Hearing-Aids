@@ -22,6 +22,8 @@
 // GAIN - GND 
 // Vin - 5V
 
+#define DEBUG_PLOT 0   // set 0 to disable
+static const char* TAG = "I2S_AUDIO";
 
 // ---------------- FIR coefficients (stereo band-pass ~300..3400 Hz, example) ----------------
 float w_left[] = { // кэфы для левого киха
@@ -86,6 +88,7 @@ float apply_filter(float signal, float w_coeffs[FILTER_ORDER]){ // примен�
 
 // ---------------- I2S настройка микрофонов и динамика ----------------
 void setupI2SMic() {
+  esp_err_t err;
   i2s_config_t i2s_config = {
     .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_RX),
     .sample_rate = SAMPLE_RATE,
@@ -105,12 +108,16 @@ void setupI2SMic() {
     .data_out_num = I2S_PIN_NO_CHANGE,
     .data_in_num = I2S_MIC_SD
   };
-  i2s_driver_install(I2S_NUM_0, &i2s_config, 0, NULL);
-  i2s_set_pin(I2S_NUM_0, &pin_config);
-  i2s_zero_dma_buffer(I2S_NUM_0);
+  err  = i2s_driver_install(I2S_NUM_0, &i2s_config, 0, NULL);
+  ESP_ERROR_CHECK(err); 
+  err  = i2s_set_pin(I2S_NUM_0, &pin_config);
+  ESP_ERROR_CHECK(err);
+  err  = i2s_zero_dma_buffer(I2S_NUM_0);
+  ESP_ERROR_CHECK(err);
 }
 
 void setupI2SSpeaker() {
+  esp_err_t err;
   i2s_config_t i2s_config = {
     .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_TX),
     .sample_rate = SAMPLE_RATE,
@@ -130,13 +137,16 @@ void setupI2SSpeaker() {
     .data_out_num = I2S_SPK_SD,
     .data_in_num = I2S_PIN_NO_CHANGE
   };
-  i2s_driver_install(I2S_NUM_1, &i2s_config, 0, NULL);
-  i2s_set_pin(I2S_NUM_1, &pin_config);
-  i2s_zero_dma_buffer(I2S_NUM_1);
+  err  = i2s_driver_install(I2S_NUM_1, &i2s_config, 0, NULL);
+  ESP_ERROR_CHECK(err); 
+  err  = i2s_set_pin(I2S_NUM_1, &pin_config);
+  ESP_ERROR_CHECK(err);
+  err  = i2s_zero_dma_buffer(I2S_NUM_1);
+  ESP_ERROR_CHECK(err);
 }
 // ---------------- Arduino ----------------
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(921600);
   delay(200);
   setupI2SMic();
   setupI2SSpeaker();
@@ -154,9 +164,16 @@ void loop() {
 
   size_t bytes_read = 0;
   i2s_read(I2S_NUM_0, input, sizeof(input), &bytes_read, portMAX_DELAY);
+#if DEBUG_PLOT
+  if (bytes_read != sizeof(input)) {
+    ESP_LOGW(TAG, "Short read: got %d expected %d", bytes_read, sizeof(input));
+}
+#endif
 
   size_t samples = bytes_read / sizeof(int32_t);
   size_t frames  = samples / 2;
+
+  //ESP_LOGI(TAG, "frames read: %d, bytes: %d", frames, bytes_read);
 
   // stereo per-sample filtering
   for (size_t i = 0; i < frames; ++i) {
@@ -166,19 +183,44 @@ void loop() {
     float xl = normalize(input[li]);
     float xr = normalize(input[ri]);
 
+    #if DEBUG_PLOT
+      static int plot_counter = 0;
+      if (++plot_counter % 4 == 0) {  // print every 4th frame to reduce load
+        Serial.print(">mic_left:");
+        Serial.println(xl, 4);
+
+        Serial.print(">mic_right:");
+        Serial.println(xr, 4);
+    }
+    #endif
+
     // 2. calculate an error from the previous filtering
     float yl = calc_error_make_y(xl, pBufL[i], pBufR[i], w_left); // для левого канала 
     float yr = calc_error_make_y(xr, pBufR[i], pBufL[i], w_right); // для правого канала 
-     
+    
     // 3. calculate the result from the previous filtering
-    float result = yl+yr;
-    output[i] = normalize_speaker(result)*GAIN; // total result filtered for speaker!
+    float result = yl;//+yr;
 
+    // [DEBUG] NOISY PLACE
+    output[i] = normalize_speaker(result)*GAIN; // total result filtered for speaker!
+    
+    
     // 4. filter for the next iteration
     pBufL[i] = apply_filter(yl, w_left);
     pBufR[i] = apply_filter(yr, w_right);
-  }
 
+    #if DEBUG_PLOT
+      static int plot_counter1 = 0;
+      if (++plot_counter1 % 4 == 0) {  // print every 4th frame to reduce load
+        Serial.print(">pBufL:");
+        Serial.println(pBufL[i], 4);
+
+        Serial.print(">pBufR:");
+        Serial.println(pBufR[i], 4);
+    }
+    #endif 
+  }
+  
   size_t bytes_written = 0;
   i2s_write(I2S_NUM_1, output, frames * sizeof(int16_t), &bytes_written, portMAX_DELAY);
   
