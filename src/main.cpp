@@ -4,7 +4,7 @@
 #include "driver/gpio.h"
 
 // Audio parameters
-#define SAMPLE_RATE      48000
+#define SAMPLE_RATE      44100
 #define BUFFER_FRAMES    32    // number of L/R frames per read/write (adjust as needed)
 #define MU 0.00005f // множитель сходимости для LMS фильтра
 //пины для INMP441
@@ -48,7 +48,7 @@ float normalize(int32_t value) { // to make int32 be in the range of -1, 1
 }
 
 int16_t normalize_speaker(float value){ // normalize a value for max chip
-  return clamp16((int16_t)(value*32767.0f));//*SAMPLE_RATE));
+  return clamp16((int16_t)(value*32767.0f*SAMPLE_RATE));
 }
 
 void recalc_fir(float w_coeffs[FILTER_ORDER], float error, float x_signal[BUFFER_FRAMES]){ // файнинг адаптивного фильтра для одного семпла
@@ -58,7 +58,7 @@ void recalc_fir(float w_coeffs[FILTER_ORDER], float error, float x_signal[BUFFER
 }
 
 
-int16_t calc_error_make_y(float input, float prev_val_dir, float prev_val_inv, float w_coeffs[FILTER_ORDER]){ // // вх сигнал, прошлый этого же канала, прошлый из противоположного канала для адаптивного фильтра
+float calc_error_make_y(float input, float prev_val_dir, float prev_val_inv, float w_coeffs[FILTER_ORDER]){ // // вх сигнал, прошлый этого же канала, прошлый из противоположного канала для адаптивного фильтра
 
   static float buffer[FILTER_ORDER] = {0}; //  буфер сигнала; инициализируется при первом вызове функции
   memmove(&buffer[1], &buffer[0], (FILTER_ORDER - 1) * sizeof(float)); // сдвиг буфера для нового значения
@@ -91,11 +91,11 @@ void setupI2SMic() {
     .sample_rate = SAMPLE_RATE,
     .bits_per_sample = I2S_BITS_PER_SAMPLE_32BIT, // best for aids
     .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
-    .communication_format = I2S_COMM_FORMAT_I2S,
+    .communication_format = I2S_COMM_FORMAT_STAND_I2S,
     .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
     .dma_buf_count = 32,
     .dma_buf_len = bufer_i2s_lenb,
-    .use_apll = false,
+    .use_apll = true,
     .tx_desc_auto_clear = true,
     .fixed_mclk = 0
   };
@@ -116,7 +116,7 @@ void setupI2SSpeaker() {
     .sample_rate = SAMPLE_RATE,
     .bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT, // due to documentation
     .channel_format = I2S_CHANNEL_FMT_ONLY_LEFT,
-    .communication_format = I2S_COMM_FORMAT_I2S,
+    .communication_format = I2S_COMM_FORMAT_STAND_I2S,
     .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
     .dma_buf_count = 32,
     .dma_buf_len = bufer_i2s_lenb,
@@ -155,7 +155,7 @@ void loop() {
   size_t bytes_read = 0;
   i2s_read(I2S_NUM_0, input, sizeof(input), &bytes_read, portMAX_DELAY);
 
-  size_t samples = bytes_read / sizeof(int16_t);
+  size_t samples = bytes_read / sizeof(int32_t);
   size_t frames  = samples / 2;
 
   // stereo per-sample filtering
