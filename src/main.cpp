@@ -4,18 +4,18 @@
 #include "driver/gpio.h"
 
 // Audio parameters
-#define SAMPLE_RATE      44100
+#define SAMPLE_RATE      48000
 #define BUFFER_FRAMES    32    // number of L/R frames per read/write (adjust as needed)
 #define MU 0.00005f // множитель сходимости для LMS фильтра
-//пины для INMP441
-#define I2S_MIC_WS GPIO_NUM_15
-#define I2S_MIC_SCK GPIO_NUM_14
-#define I2S_MIC_SD GPIO_NUM_32
-//пины для MAX98357A
-#define I2S_SPK_WS GPIO_NUM_26
-#define I2S_SPK_SCK GPIO_NUM_27
-#define I2S_SPK_SD GPIO_NUM_25
-#define bufer_i2s_lenb 512
+#define I2S_MIC_WS   GPIO_NUM_5
+#define I2S_MIC_SCK  GPIO_NUM_4
+#define I2S_MIC_SD   GPIO_NUM_18
+
+#define I2S_SPK_WS   GPIO_NUM_21
+#define I2S_SPK_SCK  GPIO_NUM_23
+#define I2S_SPK_SD   GPIO_NUM_22
+#define DMA_BUF_LEN 512
+#define DMA_BUF_COUNT 32
  // LRC - D5 -- соответствие пинов для справки
 // BCLK - D4
 // DIN - D18
@@ -46,7 +46,7 @@ static inline int16_t clamp16(float y) {
 }
 
 float normalize(int32_t value) { // to make int32 be in the range of -1, 1
-  return (float)(value >> 14)/8192.0f;
+  return (float)(value >> 8)/8388608.0f;
 }
 
 int16_t normalize_speaker(float value){ // normalize a value for max chip
@@ -92,12 +92,12 @@ void setupI2SMic() {
   i2s_config_t i2s_config = {
     .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_RX),
     .sample_rate = SAMPLE_RATE,
-    .bits_per_sample = I2S_BITS_PER_SAMPLE_32BIT, // best for aids
+    .bits_per_sample = I2S_BITS_PER_SAMPLE_32BIT,
     .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
     .communication_format = I2S_COMM_FORMAT_STAND_I2S,
     .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
-    .dma_buf_count = 32,
-    .dma_buf_len = bufer_i2s_lenb,
+    .dma_buf_count = DMA_BUF_COUNT,
+    .dma_buf_len = DMA_BUF_LEN,
     .use_apll = true,
     .tx_desc_auto_clear = true,
     .fixed_mclk = 0
@@ -121,12 +121,12 @@ void setupI2SSpeaker() {
   i2s_config_t i2s_config = {
     .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_TX),
     .sample_rate = SAMPLE_RATE,
-    .bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT, // due to documentation
+    .bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT,
     .channel_format = I2S_CHANNEL_FMT_ONLY_LEFT,
     .communication_format = I2S_COMM_FORMAT_STAND_I2S,
     .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
-    .dma_buf_count = 32,
-    .dma_buf_len = bufer_i2s_lenb,
+    .dma_buf_count = DMA_BUF_COUNT,
+    .dma_buf_len = DMA_BUF_LEN,
     .use_apll = false,
     .tx_desc_auto_clear = true,
     .fixed_mclk = 0
@@ -187,10 +187,10 @@ void loop() {
       static int plot_counter = 0;
       if (++plot_counter % 4 == 0) {  // print every 4th frame to reduce load
         Serial.print(">mic_left:");
-        Serial.println(xl, 4);
+        Serial.println(input[li], 4);
 
         Serial.print(">mic_right:");
-        Serial.println(xr, 4);
+        Serial.println(input[ri], 4);
     }
     #endif
 
@@ -199,11 +199,11 @@ void loop() {
     float yr = calc_error_make_y(xr, pBufR[i], pBufL[i], w_right); // для правого канала 
     
     // 3. calculate the result from the previous filtering
-    float result = yl;//+yr;
+    float result = yl+yr;
 
     // [DEBUG] NOISY PLACE
-    output[i] = normalize_speaker(result)*GAIN; // total result filtered for speaker!
-    
+    //output[i] = normalize_speaker(result)*GAIN; // total result filtered for speaker!
+    output[i] = clamp16((xl + xr) * 0.5f * 32767.0f);
     
     // 4. filter for the next iteration
     pBufL[i] = apply_filter(yl, w_left);
@@ -212,11 +212,14 @@ void loop() {
     #if DEBUG_PLOT
       static int plot_counter1 = 0;
       if (++plot_counter1 % 4 == 0) {  // print every 4th frame to reduce load
-        Serial.print(">pBufL:");
-        Serial.println(pBufL[i], 4);
+        // Serial.print(">pBufL:");
+        // Serial.println(pBufL[i], 4);
 
-        Serial.print(">pBufR:");
-        Serial.println(pBufR[i], 4);
+        // Serial.print(">pBufR:");
+        // Serial.println(pBufR[i], 4);
+
+        Serial.print(">output:");
+        Serial.println(output[i], 4);
     }
     #endif 
   }
