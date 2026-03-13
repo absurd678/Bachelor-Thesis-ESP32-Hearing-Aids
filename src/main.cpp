@@ -16,14 +16,15 @@
 #define I2S_SPK_SD   GPIO_NUM_22
 #define DMA_BUF_LEN 512
 #define DMA_BUF_COUNT 32
- // LRC - D5 -- соответствие пинов для справки
-// BCLK - D4
-// DIN - D18
-// GAIN - GND 
-// Vin - 5V
+
+#define SERIAL_BAUD    921600
+#define REC_DOWNSAMPLE 3                // no downsampling → full 48000 Hz
+#define REC_SAMPLE_RATE (SAMPLE_RATE / REC_DOWNSAMPLE)  // 48000
 
 #define DEBUG_PLOT 0   // set 0 to disable
 static const char* TAG = "I2S_AUDIO";
+
+static bool recording = false;
 
 // ---------------- FIR coefficients (stereo band-pass ~300..3400 Hz, example) ----------------
 float w_left[] = { // кэфы для левого киха
@@ -146,7 +147,7 @@ void setupI2SSpeaker() {
 }
 // ---------------- Arduino ----------------
 void setup() {
-  Serial.begin(921600);
+  Serial.begin(SERIAL_BAUD);
   delay(200);
   setupI2SMic();
   setupI2SSpeaker();
@@ -227,4 +228,27 @@ void loop() {
   size_t bytes_written = 0;
   i2s_write(I2S_NUM_1, output, frames * sizeof(int16_t), &bytes_written, portMAX_DELAY);
   
+
+
+
+  // ─── Serial: команды и стриминг ───
+  while (Serial.available()) {
+    char cmd = Serial.read();
+    if (cmd == 'R' && !recording) {
+      recording = true;
+      uint8_t marker[] = {0xAA, 0x55};  // маркер начала
+      Serial.write(marker, 2);
+    } else if (cmd == 'S' && recording) {
+      recording = false;
+      uint8_t marker[] = {0x55, 0xAA};  // маркер конца
+      Serial.write(marker, 2);
+    }
+  }
+
+  if (recording) {
+    // Даунсэмпл: каждый REC_DOWNSAMPLE-й сэмпл
+    for (size_t i = 0; i < frames; i += REC_DOWNSAMPLE) {
+      Serial.write((uint8_t*)&output[i], sizeof(int16_t));
+    }
+  }
 }
