@@ -203,7 +203,7 @@ void loop() {
 
     // [DEBUG] NOISY PLACE
     //output[i] = normalize_speaker(result)*GAIN; // total result filtered for speaker!
-    output[i] = clamp16((xl + xr) * 0.5f * 32767.0f);
+    output[i] = clamp16(result * 0.5f * 32767.0f);
     
     // 4. filter for the next iteration
     pBufL[i] = apply_filter(yl, w_left);
