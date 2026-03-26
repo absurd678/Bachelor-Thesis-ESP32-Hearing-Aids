@@ -9,8 +9,8 @@
 #define GAIN           4.0f
 
 // ─── Режим записи через Serial ───
-#define SERIAL_BAUD    1000000
-#define REC_DOWNSAMPLE 1                // no downsampling → full 48000 Hz
+#define SERIAL_BAUD    921600
+#define REC_DOWNSAMPLE 3                // no downsampling → full 48000 Hz
 #define REC_SAMPLE_RATE (SAMPLE_RATE / REC_DOWNSAMPLE)  // 48000
 
 static bool recording = false;

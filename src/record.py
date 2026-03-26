@@ -17,8 +17,8 @@ import wave
 import os
 import serial
 
-BAUD_RATE = 1000000
-SAMPLE_RATE = 48000  # 44100 / 3
+BAUD_RATE = 921600
+SAMPLE_RATE = 48000 // 3 # 44100 / 3
 CHANNELS = 1
 SAMPLE_WIDTH = 2  # int16 = 2 bytes
 
