@@ -2,10 +2,11 @@
 #include <Arduino.h>
 #include "driver/i2s.h"
 #include "driver/gpio.h"
+#include "lms_filters.h"
 
 // Audio parameters
 #define SAMPLE_RATE      48000
-#define BUFFER_FRAMES    32    // number of L/R frames per read/write (adjust as needed)
+#define AUDIO_BUF_LEN    256    // number of L/R frames per read/write (adjust as needed) ?= dmalen
 #define MU 0.00005f // множитель сходимости для LMS фильтра
 #define I2S_MIC_WS   GPIO_NUM_5
 #define I2S_MIC_SCK  GPIO_NUM_4
@@ -14,26 +15,24 @@
 #define I2S_SPK_WS   GPIO_NUM_21
 #define I2S_SPK_SCK  GPIO_NUM_23
 #define I2S_SPK_SD   GPIO_NUM_22
-#define DMA_BUF_LEN 512
 #define DMA_BUF_COUNT 32
 
 #define SERIAL_BAUD    921600
 #define REC_DOWNSAMPLE 3                // no downsampling → full 48000 Hz
 #define REC_SAMPLE_RATE (SAMPLE_RATE / REC_DOWNSAMPLE)  // 48000
 
-#define DEBUG_PLOT 0   // set 0 to disable
+#define DEBUG_PLOT 1   // set 0 to disable
 static const char* TAG = "I2S_AUDIO";
 
 static bool recording = false;
 
-// ---------------- FIR coefficients (stereo band-pass ~300..3400 Hz, example) ----------------
-float w_left[] = { // кэфы для левого киха
-  0.1200, 0.1400, 0.1900, 0.2600, 0.1900, 0.1400, 0.1200
+struct filter_output{ // LMS filter output
+  float current_out;  // to put into i2swrite now
+  float future_out; // postpone before the next iteration for error
 };
 
-float w_right[] = { // кэфы для правого киха
-  0.1200, 0.1400, 0.1900, 0.2600, 0.1900, 0.1400, 0.1200
-};
+// ---------------- FIR coefficients (stereo band-pass ~300..3400 Hz, example) ----------------
+
 
 static const size_t FILTER_ORDER = sizeof(w_left)/sizeof(w_left[0]);
 const float GAIN = 1.0f; // потом можно менять 1...10
@@ -54,14 +53,14 @@ int16_t normalize_speaker(float value){ // normalize a value for max chip
   return clamp16((int16_t)(value*32767.0f*SAMPLE_RATE));
 }
 
-void recalc_fir(float w_coeffs[FILTER_ORDER], float error, float x_signal[BUFFER_FRAMES]){ // файнинг адаптивного фильтра для одного семпла
+void recalc_fir(float w_coeffs[FILTER_ORDER], float error, float x_signal[AUDIO_BUF_LEN]){ // файнинг адаптивного фильтра для одного семпла
   for (int i = 0; i < FILTER_ORDER; i++){
     w_coeffs[i] += MU*error*x_signal[i];
   }
 }
 
 
-float calc_error_make_y(float input, float prev_val_dir, float prev_val_inv, float w_coeffs[FILTER_ORDER]){ // // вх сигнал, прошлый этого же канала, прошлый из противоположного канала для адаптивного фильтра
+filter_output apply_filter(float input, float prev_val_dir, float prev_val_inv, float w_coeffs[FILTER_ORDER]){ // // вх сигнал, прошлый этого же канала, прошлый из противоположного канала для адаптивного фильтра
 
   static float buffer[FILTER_ORDER] = {0}; //  буфер сигнала; инициализируется при первом вызове функции
   memmove(&buffer[1], &buffer[0], (FILTER_ORDER - 1) * sizeof(float)); // сдвиг буфера для нового значения
@@ -75,15 +74,14 @@ float calc_error_make_y(float input, float prev_val_dir, float prev_val_inv, flo
 
   recalc_fir(w_coeffs, error, buffer);
 
-  return output_ch;
-}
-
-float apply_filter(float signal, float w_coeffs[FILTER_ORDER]){ // применить фильтр полосовой, отказ от audiotools
-  float output = 0.0f;
+// Apply filter
+  float wait_output = 0.0f;
   for (int i=0; i<FILTER_ORDER; i++){
-    output += signal*w_coeffs[i];
+    wait_output += buffer[i]*w_coeffs[i];
   }
-  return output;
+
+  filter_output res = {output_ch, wait_output};
+  return res;
 }
 
 
@@ -98,7 +96,7 @@ void setupI2SMic() {
     .communication_format = I2S_COMM_FORMAT_STAND_I2S,
     .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
     .dma_buf_count = DMA_BUF_COUNT,
-    .dma_buf_len = DMA_BUF_LEN,
+    .dma_buf_len = AUDIO_BUF_LEN*2,
     .use_apll = true,
     .tx_desc_auto_clear = true,
     .fixed_mclk = 0
@@ -127,7 +125,7 @@ void setupI2SSpeaker() {
     .communication_format = I2S_COMM_FORMAT_STAND_I2S,
     .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
     .dma_buf_count = DMA_BUF_COUNT,
-    .dma_buf_len = DMA_BUF_LEN,
+    .dma_buf_len = AUDIO_BUF_LEN,
     .use_apll = false,
     .tx_desc_auto_clear = true,
     .fixed_mclk = 0
@@ -144,6 +142,9 @@ void setupI2SSpeaker() {
   ESP_ERROR_CHECK(err);
   err  = i2s_zero_dma_buffer(I2S_NUM_1);
   ESP_ERROR_CHECK(err);
+
+  memset(w_left, 0, sizeof(w_left));
+  memset(w_right, 0, sizeof(w_right));
 }
 // ---------------- Arduino ----------------
 void setup() {
@@ -156,10 +157,10 @@ void setup() {
 
 void loop() {
 
-  int32_t input[BUFFER_FRAMES * 2]; // mic in
-  int16_t output[BUFFER_FRAMES]; // speaker out
-  float pBufL[BUFFER_FRAMES] = {0}; // filtered signal saved
-  float pBufR[BUFFER_FRAMES] = {0}; // filtered signal saved
+  int32_t input[AUDIO_BUF_LEN * 2]; // mic in
+  int16_t output[AUDIO_BUF_LEN]; // speaker out
+  float pBufL[AUDIO_BUF_LEN] = {0}; // filtered signal saved
+  float pBufR[AUDIO_BUF_LEN] = {0}; // filtered signal saved
   float error_array_left_fir[FILTER_ORDER]; // left filter error
   float error_array_right_fir[FILTER_ORDER]; // right filter error
 
@@ -177,7 +178,7 @@ void loop() {
   //ESP_LOGI(TAG, "frames read: %d, bytes: %d", frames, bytes_read);
 
   // stereo per-sample filtering
-  for (size_t i = 0; i < frames; ++i) {
+  for (size_t i = 0; i < samples; ++i) {
     // 1. read l, r, normalize
     size_t li = (i << 1);
     size_t ri = li + 1;
@@ -195,20 +196,23 @@ void loop() {
     }
     #endif
 
-    // 2. calculate an error from the previous filtering
-    float yl = calc_error_make_y(xl, pBufL[i], pBufR[i], w_left); // для левого канала 
-    float yr = calc_error_make_y(xr, pBufR[i], pBufL[i], w_right); // для правого канала 
+    // 2. Apply filter
+    //left
+    filter_output res_left = apply_filter(xl, pBufL[i], pBufR[i], w_left);
+    float yl = res_left.current_out;
+    pBufL[i] = res_left.future_out;
+    //right
+    filter_output res_right = apply_filter(xr, pBufR[i], pBufL[i], w_right);
+    float yr = res_right.current_out;
+    pBufR[i] = res_right.future_out; 
     
     // 3. calculate the result from the previous filtering
+    // float result = yl+yr;
     float result = yl+yr;
 
-    // [DEBUG] NOISY PLACE
-    //output[i] = normalize_speaker(result)*GAIN; // total result filtered for speaker!
+    // 4. Normalize
     output[i] = clamp16(result * 0.5f * 32767.0f);
-    
-    // 4. filter for the next iteration
-    pBufL[i] = apply_filter(yl, w_left);
-    pBufR[i] = apply_filter(yr, w_right);
+  
 
     #if DEBUG_PLOT
       static int plot_counter1 = 0;
