@@ -6,7 +6,7 @@
 
 // Audio parameters
 #define SAMPLE_RATE      48000
-#define AUDIO_BUF_LEN    256    // number of L/R frames per read/write (adjust as needed) ?= dmalen
+#define AUDIO_BUF_LEN    32    // number of L/R frames per read/write (adjust as needed) ?= dmalen
 #define MU 0.00005f // множитель сходимости для LMS фильтра
 #define I2S_MIC_WS   GPIO_NUM_5
 #define I2S_MIC_SCK  GPIO_NUM_4
@@ -20,8 +20,9 @@
 #define SERIAL_BAUD    921600
 #define REC_DOWNSAMPLE 3                // no downsampling → full 48000 Hz
 #define REC_SAMPLE_RATE (SAMPLE_RATE / REC_DOWNSAMPLE)  // 48000
+#define FILTER_ORDER 10
 
-#define DEBUG_PLOT 1   // set 0 to disable
+#define DEBUG_PLOT 0   // set 0 to disable
 static const char* TAG = "I2S_AUDIO";
 
 static bool recording = false;
@@ -31,10 +32,12 @@ struct filter_output{ // LMS filter output
   float future_out; // postpone before the next iteration for error
 };
 
+LMSFilter left_filter(FILTER_ORDER, MU);
+LMSFilter right_filter(FILTER_ORDER, MU);
+
 // ---------------- FIR coefficients (stereo band-pass ~300..3400 Hz, example) ----------------
 
 
-static const size_t FILTER_ORDER = sizeof(w_left)/sizeof(w_left[0]);
 const float GAIN = 1.0f; // потом можно менять 1...10
 float var_gain = GAIN;
 uint32_t counter = 0; // Итеративное изменение GAIN каждые 10 секунд
@@ -96,7 +99,7 @@ void setupI2SMic() {
     .communication_format = I2S_COMM_FORMAT_STAND_I2S,
     .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
     .dma_buf_count = DMA_BUF_COUNT,
-    .dma_buf_len = AUDIO_BUF_LEN*2,
+    .dma_buf_len = 512,
     .use_apll = true,
     .tx_desc_auto_clear = true,
     .fixed_mclk = 0
@@ -125,7 +128,7 @@ void setupI2SSpeaker() {
     .communication_format = I2S_COMM_FORMAT_STAND_I2S,
     .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
     .dma_buf_count = DMA_BUF_COUNT,
-    .dma_buf_len = AUDIO_BUF_LEN,
+    .dma_buf_len = 512,
     .use_apll = false,
     .tx_desc_auto_clear = true,
     .fixed_mclk = 0
@@ -143,8 +146,6 @@ void setupI2SSpeaker() {
   err  = i2s_zero_dma_buffer(I2S_NUM_1);
   ESP_ERROR_CHECK(err);
 
-  memset(w_left, 0, sizeof(w_left));
-  memset(w_right, 0, sizeof(w_right));
 }
 // ---------------- Arduino ----------------
 void setup() {
@@ -161,9 +162,7 @@ void loop() {
   int16_t output[AUDIO_BUF_LEN]; // speaker out
   float pBufL[AUDIO_BUF_LEN] = {0}; // filtered signal saved
   float pBufR[AUDIO_BUF_LEN] = {0}; // filtered signal saved
-  float error_array_left_fir[FILTER_ORDER]; // left filter error
-  float error_array_right_fir[FILTER_ORDER]; // right filter error
-
+  
   size_t bytes_read = 0;
   i2s_read(I2S_NUM_0, input, sizeof(input), &bytes_read, portMAX_DELAY);
 #if DEBUG_PLOT
@@ -198,13 +197,11 @@ void loop() {
 
     // 2. Apply filter
     //left
-    filter_output res_left = apply_filter(xl, pBufL[i], pBufR[i], w_left);
-    float yl = res_left.current_out;
-    pBufL[i] = res_left.future_out;
+    float yl = left_filter.process(xl, pBufL[i]);
+    //float yl = xl - pBufR[i];
     //right
-    filter_output res_right = apply_filter(xr, pBufR[i], pBufL[i], w_right);
-    float yr = res_right.current_out;
-    pBufR[i] = res_right.future_out; 
+    float yr = right_filter.process(xr, pBufR[i]);
+    //float yr = xr - pBufL[i];
     
     // 3. calculate the result from the previous filtering
     // float result = yl+yr;
