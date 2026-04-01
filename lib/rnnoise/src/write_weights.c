@@ -1,5 +1,4 @@
-/* Copyright (c) 2018 Gregor Richards
- * Copyright (c) 2017 Mozilla */
+/* Copyright (c) 2023 Amazon */
 /*
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions
@@ -25,45 +24,54 @@
    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdio.h>
-#include "rnnoise.h"
+#include <string.h>
+#include <stddef.h>
+#include "nnet.h"
+#include "arch.h"
+#include "nnet.h"
 
-#define FRAME_SIZE 480
-
-int main(int argc, char **argv) {
-  int i;
-  int first = 1;
-  float x[FRAME_SIZE];
-  FILE *f1, *fout;
-  DenoiseState *st;
+/* This is a bit of a hack because we need to build nnet_data.c and plc_data.c without USE_WEIGHTS_FILE,
+   but USE_WEIGHTS_FILE is defined in config.h. */
+#undef HAVE_CONFIG_H
 #ifdef USE_WEIGHTS_FILE
-  RNNModel *model = rnnoise_model_from_filename("weights_blob.bin");
-  st = rnnoise_create(model);
-#else
-  st = rnnoise_create(NULL);
+#undef USE_WEIGHTS_FILE
 #endif
+#include "rnnoise_data.c"
 
-  if (argc!=3) {
-    fprintf(stderr, "usage: %s <noisy speech> <output denoised>\n", argv[0]);
-    return 1;
+void write_weights(const WeightArray *list, FILE *fout)
+{
+  int i=0;
+  unsigned char zeros[WEIGHT_BLOCK_SIZE] = {0};
+  while (list[i].name != NULL) {
+    WeightHead h;
+    if (strlen(list[i].name) >= sizeof(h.name) - 1) {
+      printf("[write_weights] warning: name %s too long\n", list[i].name);
+    }
+    memcpy(h.head, "DNNw", 4);
+    h.version = WEIGHT_BLOB_VERSION;
+    h.type = list[i].type;
+    h.size = list[i].size;
+    h.block_size = (h.size+WEIGHT_BLOCK_SIZE-1)/WEIGHT_BLOCK_SIZE*WEIGHT_BLOCK_SIZE;
+    RNN_CLEAR(h.name, sizeof(h.name));
+    strncpy(h.name, list[i].name, sizeof(h.name));
+    h.name[sizeof(h.name)-1] = 0;
+    celt_assert(sizeof(h) == WEIGHT_BLOCK_SIZE);
+    fwrite(&h, 1, WEIGHT_BLOCK_SIZE, fout);
+    fwrite(list[i].data, 1, h.size, fout);
+    fwrite(zeros, 1, h.block_size-h.size, fout);
+    i++;
   }
-  f1 = fopen(argv[1], "rb");
-  fout = fopen(argv[2], "wb");
-  while (1) {
-    short tmp[FRAME_SIZE];
-    fread(tmp, sizeof(short), FRAME_SIZE, f1);
-    if (feof(f1)) break;
-    for (i=0;i<FRAME_SIZE;i++) x[i] = tmp[i];
-    rnnoise_process_frame(st, x, x);
-    for (i=0;i<FRAME_SIZE;i++) tmp[i] = x[i];
-    if (!first) fwrite(tmp, sizeof(short), FRAME_SIZE, fout);
-    first = 0;
-  }
-  rnnoise_destroy(st);
-  fclose(f1);
+}
+
+int main(void)
+{
+  FILE *fout = fopen("weights_blob.bin", "w");
+  write_weights(rnnoise_arrays, fout);
   fclose(fout);
-#ifdef USE_WEIGHTS_FILE
-  rnnoise_model_free(model);
-#endif
   return 0;
 }

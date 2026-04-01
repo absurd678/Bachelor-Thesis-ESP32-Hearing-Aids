@@ -1,0 +1,8 @@
+{
+    "name": "rnnoise",
+    "version": "0.0.1",
+    "build": {
+      "includeDir": "include",
+      "srcDir": "src"
+    }
+  }

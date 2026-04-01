@@ -2,6 +2,9 @@
 #include "driver/gpio.h"
 #include "driver/i2s.h"
 #include "lms_filters.h"
+extern "C" {
+  #include <rnnoise.h>
+}
 
 #define SAMPLE_RATE 48000
 #define AUDIO_BUF_LEN 32
@@ -22,13 +25,21 @@
 #define REC_SAMPLE_RATE (SAMPLE_RATE / REC_DOWNSAMPLE)
 #define DEBUG_PLOT 0
 
+// =============== GLOBAL =============
+// ------- I2S -----------
 static const char* TAG = "I2S_AUDIO";
 static constexpr float GAIN = 1.0f;
 static bool recording = false;
 
+// ------- LMS -----------
 LMSFilter left_filter(FILTER_ORDER, MU);
 LMSFilter right_filter(FILTER_ORDER, MU);
 
+// ----- RNNoise ------
+DenoiseState *st;
+
+
+// ========= FUNCTIONS ===========
 static inline int16_t clamp16(float y) {
   if (y > 32767.0f) return 32767;
   if (y < -32768.0f) return -32768;
@@ -95,18 +106,25 @@ void setupI2SSpeaker() {
   ESP_ERROR_CHECK(i2s_set_clk(I2S_NUM_1, SAMPLE_RATE, I2S_BITS_PER_SAMPLE_16BIT, I2S_CHANNEL_MONO));
 }
 
+// ========== SETUP ============
 void setup() {
   Serial.begin(SERIAL_BAUD);
   delay(200);
   setupI2SMic();
   setupI2SSpeaker();
   Serial.println("mono pipeline ready.");
+  st = rnnoise_create(NULL);
 }
 
+// ========== LOOP ============
 void loop() {
+
+  // ----------- LOCALS -----------
   int32_t input[AUDIO_BUF_LEN * 2];
   int16_t output[AUDIO_BUF_LEN];
+  float rnn_input[AUDIO_BUF_LEN];
 
+  // ------------ I2S READ --------------
   size_t bytes_read = 0;
   i2s_read(I2S_NUM_0, input, sizeof(input), &bytes_read, portMAX_DELAY);
 
@@ -118,6 +136,8 @@ void loop() {
 
   const size_t samples = bytes_read / sizeof(int32_t);
   const size_t frames = samples / 2;
+
+  // --------- LMS Filter --------------
 
   for (size_t i = 0; i < frames; ++i) {
     const size_t li = i * 2;
@@ -137,12 +157,13 @@ void loop() {
 #endif
 
     // Cross-reference NLMS: each channel uses the opposite mic as reference.
-    const float yl = left_filter.process(xr, xl);
+    const float yl = left_filter.process(xr, xl); // TODO: desired signal is x[n - D], D - look the patent
     const float yr = right_filter.process(xl, xr);
     const float result = (yl + yr) * 0.5f * GAIN;
-    const int16_t sample_out = clamp16(result * 32767.0f);
+    // const int16_t sample_out = clamp16(result * 32767.0f);
 
-    output[i] = sample_out;
+    // output[i] = sample_out;
+    rnn_input[i] = result; // RNNoise takes float only
 
 #if DEBUG_PLOT
     static int plot_counter1 = 0;
@@ -151,11 +172,21 @@ void loop() {
       Serial.println(sample_out);
     }
 #endif
+  } // for i
+
+  // -------- RNNoise ----------
+
+  rnnoise_process_frame(st, rnn_input, rnn_input);
+
+  for (size_t i = 0; i < frames; ++i) {
+    output[i] = clamp16(rnn_input[i] * 32767.0f);
   }
 
+  // ------------- I2S WRITE --------------- 
   size_t bytes_written = 0;
   i2s_write(I2S_NUM_1, output, frames * sizeof(int16_t), &bytes_written, portMAX_DELAY);
 
+  // --------------- PYTHON RECORD --------------- 
   while (Serial.available()) {
     const char cmd = Serial.read();
     if (cmd == 'R' && !recording) {
