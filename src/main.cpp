@@ -92,7 +92,7 @@ void setupI2SSpeaker() {
   ESP_ERROR_CHECK(i2s_driver_install(I2S_NUM_1, &i2s_config, 0, NULL));
   ESP_ERROR_CHECK(i2s_set_pin(I2S_NUM_1, &pin_config));
   ESP_ERROR_CHECK(i2s_zero_dma_buffer(I2S_NUM_1));
-  ESP_ERROR_CHECK(i2s_set_clk(I2S_NUM_1, SAMPLE_RATE, I2S_BITS_PER_SAMPLE_16BIT, I2S_CHANNEL_STEREO));
+  ESP_ERROR_CHECK(i2s_set_clk(I2S_NUM_1, SAMPLE_RATE, I2S_BITS_PER_SAMPLE_16BIT, I2S_CHANNEL_MONO));
 }
 
 void setup() {
@@ -100,7 +100,7 @@ void setup() {
   delay(200);
   setupI2SMic();
   setupI2SSpeaker();
-  Serial.println("stereo pipeline ready.");
+  Serial.println("mono pipeline ready.");
 }
 
 void loop() {
@@ -142,8 +142,7 @@ void loop() {
     const float result = (yl + yr) * 0.5f * GAIN;
     const int16_t sample_out = clamp16(result * 32767.0f);
 
-    output[li] = sample_out;
-    output[ri] = sample_out;
+    output[i] = sample_out;
 
 #if DEBUG_PLOT
     static int plot_counter1 = 0;
@@ -172,7 +171,7 @@ void loop() {
 
   if (recording) {
     for (size_t i = 0; i < frames; i += REC_DOWNSAMPLE) {
-      Serial.write((uint8_t*)&output[i * 2], sizeof(int16_t));
+      Serial.write((uint8_t*)&output[i], sizeof(int16_t));
     }
   }
 }
