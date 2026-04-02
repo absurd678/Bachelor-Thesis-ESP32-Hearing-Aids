@@ -113,7 +113,8 @@ void setup() {
   setupI2SMic();
   setupI2SSpeaker();
   Serial.println("mono pipeline ready.");
-  st = rnnoise_create(NULL);
+  RNNModel* model = rnnoise_model_from_filename("C:\\Users\\Artem\\Documents\\PlatformIO\\Projects\\Hearing aids ESP32\\lib\\rnnoise\\weights_blob.bin");
+  st = rnnoise_create(model);
 }
 
 // ========== LOOP ============

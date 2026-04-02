@@ -33,7 +33,7 @@
 #include "common.h"
 #include <math.h>
 #include "arch.h"
-#include "x86/x86_arch_macros.h"
+//#include "x86/x86_arch_macros.h" - x86 is not compiled on ESP32!!! 
 
 
 #if defined(__AVX__) || defined(__SSE2__)

@@ -3,6 +3,17 @@
     "version": "0.0.1",
     "build": {
       "includeDir": "include",
-      "srcDir": "src"
+      "includeFilter": [
+            "+<*>",
+            "-<vec_avx.h>"
+        ],
+      "srcDir": "src",
+      "srcFilter": [ 
+        "+<*>",
+        "-<dump_features.c>",
+        "-<write_weights.c>",
+        "-<dump_rnnoise_tables.c>"
+        ]
+        
     }
   }
