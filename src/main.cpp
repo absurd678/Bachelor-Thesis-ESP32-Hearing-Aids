@@ -7,7 +7,7 @@ extern "C" {
 }
 
 #define SAMPLE_RATE 48000
-#define AUDIO_BUF_LEN 32
+#define AUDIO_BUF_LEN 480
 #define FILTER_ORDER 10
 #define MU 0.00005f
 
