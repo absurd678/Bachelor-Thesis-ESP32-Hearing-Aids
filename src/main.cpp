@@ -25,6 +25,8 @@
 static const char* TAG = "I2S_AUDIO";
 static constexpr float GAIN = 1.0f;
 static bool recording = false;
+static float delay_l = 0.0f;
+static float delay_r = 0.0f;
 
 LMSFilter left_filter(FILTER_ORDER, MU);
 LMSFilter right_filter(FILTER_ORDER, MU);
@@ -118,6 +120,9 @@ void loop() {
 
   const size_t samples = bytes_read / sizeof(int32_t);
   const size_t frames = samples / 2;
+  static float history_l[3] = {0.0f, 0.0f, 0.0f};
+  static float history_r[3] = {0.0f, 0.0f, 0.0f};
+  static size_t history_index = 0;
 
   for (size_t i = 0; i < frames; ++i) {
     const size_t li = i * 2;
@@ -125,6 +130,11 @@ void loop() {
 
     const float xl = normalizeMicSample(input[li]);
     const float xr = normalizeMicSample(input[ri]);
+    delay_l = history_l[0];
+    delay_r = history_r[0];
+    history_l[history_index] = xl;
+    history_r[history_index] = xr;
+    history_index = (history_index + 1) % 3;
 
 #if DEBUG_PLOT
     static int plot_counter = 0;
@@ -137,10 +147,12 @@ void loop() {
 #endif
 
     // Cross-reference NLMS: each channel uses the opposite mic as reference.
-    const float yl = left_filter.process(xr, xl);
-    const float yr = right_filter.process(xl, xr);
-    const float result = (yl + yr) * 0.5f * GAIN;
-    const int16_t sample_out = clamp16(result * 32767.0f);
+    float yl = left_filter.process(xl, delay_l);
+    float yr = right_filter.process(xr, delay_r);
+    float rl = delay_l - yr;
+    float rr = delay_r - yl;
+    float result = (rl + rr) * 0.5f * GAIN;
+    int16_t sample_out = clamp16(result * 32767.0f);
 
     output[li] = sample_out;
     output[ri] = sample_out;
