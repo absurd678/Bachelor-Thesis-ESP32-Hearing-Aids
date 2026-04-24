@@ -1,3 +1,0 @@
-C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-subbuild/CMakeFiles/arduino_emulator-populate.dir
-C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-subbuild/CMakeFiles/edit_cache.dir
-C:/Users/Artem/Documents/PlatformIO/Projects/Hearing aids ESP32/build/_deps/arduino_emulator-subbuild/CMakeFiles/rebuild_cache.dir
