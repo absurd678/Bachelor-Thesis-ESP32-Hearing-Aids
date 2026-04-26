@@ -1,12 +1,11 @@
 #include <Arduino.h>
 #include "driver/gpio.h"
 #include "driver/i2s.h"
-#include "lms_filters.h"
 
 #define SAMPLE_RATE 48000
-#define AUDIO_BUF_LEN 32
-#define FILTER_ORDER 10
-#define MU 0.00005f
+#define AUDIO_BUF_LEN 480
+#define FFT_SIZE 512
+#define TWO_PI_F 6.28318530717958647692f
 
 #define I2S_MIC_WS GPIO_NUM_5
 #define I2S_MIC_SCK GPIO_NUM_4
@@ -18,16 +17,14 @@
 
 #define DMA_BUF_COUNT 32
 #define SERIAL_BAUD 921600
-#define REC_DOWNSAMPLE 3
-#define REC_SAMPLE_RATE (SAMPLE_RATE / REC_DOWNSAMPLE)
-#define DEBUG_PLOT 0
 
-static const char* TAG = "I2S_AUDIO";
-static constexpr float GAIN = 1.0f;
-static bool recording = false;
+struct ComplexSample {
+  float real;
+  float imag;
+};
 
-LMSFilter left_filter(FILTER_ORDER, MU);
-LMSFilter right_filter(FILTER_ORDER, MU);
+ComplexSample xSpectrum[FFT_SIZE];
+static ComplexSample xTimeDomain[FFT_SIZE];
 
 static inline int16_t clamp16(float y) {
   if (y > 32767.0f) return 32767;
@@ -37,6 +34,88 @@ static inline int16_t clamp16(float y) {
 
 static inline float normalizeMicSample(int32_t value) {
   return (float)(value >> 8) / 8388608.0f;
+}
+
+static void fft(ComplexSample *buffer, size_t len, bool inverse) {
+  for (size_t i = 1, j = 0; i < len; ++i) {
+    size_t bit = len >> 1;
+    for (; j & bit; bit >>= 1) {
+      j ^= bit;
+    }
+    j ^= bit;
+
+    if (i < j) {
+      const ComplexSample temp = buffer[i];
+      buffer[i] = buffer[j];
+      buffer[j] = temp;
+    }
+  }
+
+  for (size_t step = 2; step <= len; step <<= 1) {
+    const float angle = (inverse ? TWO_PI_F : -TWO_PI_F) / (float)step;
+    const float wStepReal = cosf(angle);
+    const float wStepImag = sinf(angle);
+
+    for (size_t block = 0; block < len; block += step) {
+      float wReal = 1.0f;
+      float wImag = 0.0f;
+      const size_t halfStep = step >> 1;
+
+      for (size_t k = 0; k < halfStep; ++k) {
+        ComplexSample &even = buffer[block + k];
+        ComplexSample &odd = buffer[block + k + halfStep];
+
+        const float oddReal = odd.real * wReal - odd.imag * wImag;
+        const float oddImag = odd.real * wImag + odd.imag * wReal;
+
+        odd.real = even.real - oddReal;
+        odd.imag = even.imag - oddImag;
+        even.real += oddReal;
+        even.imag += oddImag;
+
+        const float nextWReal = wReal * wStepReal - wImag * wStepImag;
+        wImag = wReal * wStepImag + wImag * wStepReal;
+        wReal = nextWReal;
+      }
+    }
+  }
+
+  if (inverse) {
+    const float invLen = 1.0f / (float)len;
+    for (size_t i = 0; i < len; ++i) {
+      buffer[i].real *= invLen;
+      buffer[i].imag *= invLen;
+    }
+  }
+}
+
+void forwardFourierTransform(const int32_t *input, size_t frames) {
+  const size_t usedFrames = frames < (size_t)AUDIO_BUF_LEN ? frames : (size_t)AUDIO_BUF_LEN;
+
+  for (size_t i = 0; i < FFT_SIZE; ++i) {
+    if (i < usedFrames) {
+      xSpectrum[i].real = normalizeMicSample(input[i * 2]);
+      xSpectrum[i].imag = 0.0f;
+    } else {
+      xSpectrum[i].real = 0.0f;
+      xSpectrum[i].imag = 0.0f;
+    }
+  }
+
+  fft(xSpectrum, FFT_SIZE, false);
+}
+
+void inverseFourierTransform(int16_t *output, size_t frames) {
+  for (size_t i = 0; i < FFT_SIZE; ++i) {
+    xTimeDomain[i] = xSpectrum[i];
+  }
+
+  fft(xTimeDomain, FFT_SIZE, true);
+
+  const size_t usedFrames = frames < (size_t)AUDIO_BUF_LEN ? frames : (size_t)AUDIO_BUF_LEN;
+  for (size_t i = 0; i < usedFrames; ++i) {
+    output[i] = clamp16(xTimeDomain[i].real * 32767.0f);
+  }
 }
 
 void setupI2SMic() {
@@ -110,69 +189,16 @@ void loop() {
   size_t bytes_read = 0;
   i2s_read(I2S_NUM_0, input, sizeof(input), &bytes_read, portMAX_DELAY);
 
-#if DEBUG_PLOT
-  if (bytes_read != sizeof(input)) {
-    ESP_LOGW(TAG, "Short read: got %d expected %d", bytes_read, sizeof(input));
-  }
-#endif
-
   const size_t samples = bytes_read / sizeof(int32_t);
   const size_t frames = samples / 2;
 
-  for (size_t i = 0; i < frames; ++i) {
-    const size_t li = i * 2;
-    const size_t ri = li + 1;
+  forwardFourierTransform(input, frames);
 
-    const float xl = normalizeMicSample(input[li]);
-    const float xr = normalizeMicSample(input[ri]);
+  // xSpectrum[] contains the frequency-domain buffer here.
 
-#if DEBUG_PLOT
-    static int plot_counter = 0;
-    if (++plot_counter % 4 == 0) {
-      Serial.print(">mic_left:");
-      Serial.println(input[li], 4);
-      Serial.print(">mic_right:");
-      Serial.println(input[ri], 4);
-    }
-#endif
-
-    // Cross-reference NLMS: each channel uses the opposite mic as reference.
-    const float yl = left_filter.process(xr, xl);
-    const float yr = right_filter.process(xl, xr);
-    const float result = (yl + yr) * 0.5f * GAIN;
-    const int16_t sample_out = clamp16(result * 32767.0f);
-
-    output[li] = sample_out;
-    output[ri] = sample_out;
-
-#if DEBUG_PLOT
-    static int plot_counter1 = 0;
-    if (++plot_counter1 % 4 == 0) {
-      Serial.print(">output:");
-      Serial.println(sample_out);
-    }
-#endif
-  }
+  inverseFourierTransform(output, frames);
 
   size_t bytes_written = 0;
   i2s_write(I2S_NUM_1, output, frames * sizeof(int16_t), &bytes_written, portMAX_DELAY);
 
-  while (Serial.available()) {
-    const char cmd = Serial.read();
-    if (cmd == 'R' && !recording) {
-      recording = true;
-      const uint8_t marker[] = {0xAA, 0x55};
-      Serial.write(marker, sizeof(marker));
-    } else if (cmd == 'S' && recording) {
-      recording = false;
-      const uint8_t marker[] = {0x55, 0xAA};
-      Serial.write(marker, sizeof(marker));
-    }
-  }
-
-  if (recording) {
-    for (size_t i = 0; i < frames; i += REC_DOWNSAMPLE) {
-      Serial.write((uint8_t*)&output[i * 2], sizeof(int16_t));
-    }
-  }
 }
