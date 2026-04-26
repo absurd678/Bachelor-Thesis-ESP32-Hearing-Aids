@@ -184,6 +184,8 @@ void setup() {
 
 void loop() {
   int32_t input[AUDIO_BUF_LEN * 2];
+  float input_norm_mono[AUDIO_BUF_LEN]; // normalized input of xl+xr
+  float output_norm_mono[AUDIO_BUF_LEN]; // normalized output
   int16_t output[AUDIO_BUF_LEN];
 
   size_t bytes_read = 0;
@@ -192,11 +194,25 @@ void loop() {
   const size_t samples = bytes_read / sizeof(int32_t);
   const size_t frames = samples / 2;
 
-  forwardFourierTransform(input, frames);
+  for (size_t i = 0; i < frames; ++i) {
+    
+    size_t li = (i << 1);
+    size_t ri = li + 1;
+    float xl = normalizeMicSample(input[li]);
+    float xr = normalizeMicSample(input[ri]);
+    input_norm_mono[i] = (xl+xr)*0.5;
+
+  }
+
+  forwardFourierTransform(input, frames); // change here
 
   // xSpectrum[] contains the frequency-domain buffer here.
 
-  inverseFourierTransform(output, frames);
+  inverseFourierTransform(output, frames); // change here
+
+  for (size_t i = 0; i < frames; ++i){
+    output[i] = output_norm_mono
+  }
 
   size_t bytes_written = 0;
   i2s_write(I2S_NUM_1, output, frames * sizeof(int16_t), &bytes_written, portMAX_DELAY);
