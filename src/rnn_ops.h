@@ -150,6 +150,7 @@ static void compute_features(
 static void update_history(float history[kSeqLen][kFeatures], const float current[kFeatures]) {
   memmove(history[1], history[0], (kSeqLen - 1) * kFeatures * sizeof(float));
   memcpy(history[0], current, kFeatures * sizeof(float));
+  //for (int i=0; i<kSeqLen; i++) memset(history,1.0f,kFeatures);
 }
 
 static int bin_to_band(int bin_index) {
@@ -363,7 +364,7 @@ private:
     compute_bands(spec, bands);
 
     float features[kFeatures];
-    compute_features(bands, &has_prev_log_bands_, prev_log_bands_, features);
+    compute_features(bands, &has_prev_log_bands_, prev_log_bands_, features); //prev_log_bands_? 
     update_history(history_, features);
 
     float gains[kBands];

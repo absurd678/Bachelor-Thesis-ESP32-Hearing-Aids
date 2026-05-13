@@ -73,10 +73,7 @@ void setupI2SSpeaker() {
 
 // -------------- GLOBAL VARIABLES ---------------
 int32_t input[AUDIO_BUF_LEN * 2];
-float input_norm_mono[AUDIO_BUF_LEN]; // normalized input of xl+xr
-float output_norm_mono[AUDIO_BUF_LEN]; // normalized output
 int16_t output[kMaxRealtimeOutput];
-
 float filter_block[AUDIO_BUF_LEN];
 
 LMSFilter left_filter(TAPS, MU);
