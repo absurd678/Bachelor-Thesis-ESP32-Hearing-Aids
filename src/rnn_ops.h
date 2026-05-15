@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Arduino.h>
+#include <esp_heap_caps.h>
 #include <math.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -46,6 +47,21 @@ static void ensure_tflite_ok(TfLiteStatus status, const char* message) {
   if (status != kTfLiteOk) {
     die(message);
   }
+}
+
+static uint8_t* alloc_psram_aligned(size_t size, size_t alignment) {
+  const size_t padded_size = size + alignment - 1;
+  void* raw = heap_caps_malloc(padded_size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+  if (!raw) {
+    Serial.printf("PSRAM alloc failed: %zu bytes\n", padded_size);
+    die("PSRAM alloc failed");
+  }
+
+  const uintptr_t raw_addr = reinterpret_cast<uintptr_t>(raw);
+  const uintptr_t aligned_addr = (raw_addr + alignment - 1) & ~(uintptr_t)(alignment - 1);
+  uint8_t* aligned = reinterpret_cast<uint8_t*>(aligned_addr);
+  memset(aligned, 0, size);
+  return aligned;
 }
 
 static int8_t quantize_int8(float x, const TfLiteQuantizationParams& q) {
@@ -188,11 +204,16 @@ public:
         input_count_(0),
         output_count_(0),
         input_data_(nullptr),
-        output_data_(nullptr) {
+        output_data_(nullptr),
+        tensor_arena_(nullptr) {
   }
 
   void init() {
-    memset(tensor_arena_, 0, sizeof(tensor_arena_));
+    if (!tensor_arena_) {
+      tensor_arena_ = alloc_psram_aligned(kTensorArenaSize, 16);
+    } else {
+      memset(tensor_arena_, 0, kTensorArenaSize);
+    }
 
     model_ = tflite::GetModel(MODEL_DATA);
     if (!model_) {
@@ -210,7 +231,7 @@ public:
         model_,
         resolver_,
         tensor_arena_,
-        sizeof(tensor_arena_)
+        kTensorArenaSize
     );
 
     ensure_tflite_ok(interpreter_->AllocateTensors(), "AllocateTensors failed");
@@ -239,6 +260,8 @@ public:
     }
 
     Serial.println("RNN initialized");
+    Serial.printf("Arena size: %zu bytes\n", (size_t)kTensorArenaSize);
+    Serial.printf("Arena addr: %p\n", tensor_arena_);
     Serial.printf("Arena used: %zu bytes\n", interpreter_->arena_used_bytes());
   }
 
@@ -295,7 +318,7 @@ private:
   size_t output_count_;
   void* input_data_;
   void* output_data_;
-  alignas(16) uint8_t tensor_arena_[kTensorArenaSize];
+  uint8_t* tensor_arena_;
   alignas(tflite::MicroInterpreter) uint8_t interpreter_storage_[sizeof(tflite::MicroInterpreter)];
 };
 

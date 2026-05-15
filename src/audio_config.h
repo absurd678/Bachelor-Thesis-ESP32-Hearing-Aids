@@ -4,9 +4,9 @@
 #define I2S_MIC_WS GPIO_NUM_5
 #define I2S_MIC_SCK GPIO_NUM_4
 #define I2S_MIC_SD GPIO_NUM_18
-#define I2S_SPK_WS GPIO_NUM_21
-#define I2S_SPK_SCK GPIO_NUM_23
-#define I2S_SPK_SD GPIO_NUM_22
+#define I2S_SPK_WS GPIO_NUM_6
+#define I2S_SPK_SCK GPIO_NUM_7
+#define I2S_SPK_SD GPIO_NUM_17
 #define DMA_BUF_COUNT 8
 #define SERIAL_BAUD 921600
 // -------- LMS ---------
