@@ -18,5 +18,5 @@
 #define TWO_PI_F 6.28318530717958647692f
 #define AUDIO_BUF_LEN 256
 // --------- RNN ------------
-#define kTensorArenaSize (64 * 1024)
+#define kTensorArenaSize (1024 * 1024)
 // #define TFLITE_EMULATE_FLOAT

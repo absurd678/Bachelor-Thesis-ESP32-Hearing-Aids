@@ -164,9 +164,15 @@ static void compute_features(
 }
 
 static void update_history(float history[kSeqLen][kFeatures], const float current[kFeatures]) {
-  memmove(history[1], history[0], (kSeqLen - 1) * kFeatures * sizeof(float));
-  memcpy(history[0], current, kFeatures * sizeof(float));
-  //for (int i=0; i<kSeqLen; i++) memset(history,1.0f,kFeatures);
+    for (int t = kSeqLen - 1; t > 0; --t) {
+        for (int f = 0; f < kFeatures; ++f) {
+            history[t][f] = history[t - 1][f];
+        }
+    }
+
+    for (int f = 0; f < kFeatures; ++f) {
+        history[0][f] = current[f];
+    }
 }
 
 static int bin_to_band(int bin_index) {
@@ -252,8 +258,8 @@ public:
     output_quant_ = read_tensor_quant_params(output_tensor, "Output");
     input_count_ = tensor_element_count(input_);
     output_count_ = tensor_element_count(output_);
-    input_data_ = input_->data.data;
-    output_data_ = output_->data.data;
+    input_data_ = input_->data.int8;
+    output_data_ = output_->data.int8;
 
     if (!input_data_ || !output_data_ || input_count_ == 0 || output_count_ == 0) {
       die("Invalid model input/output tensor data");
@@ -279,7 +285,52 @@ public:
     while (idx < input_count_) {
       input_data[idx++] = quantize_int8(0.0f, input_quant_);
     }
+    // ------------ Debug output -------------
+    Serial.printf("input type=%d bytes=%zu ptr=%p\n",
+              input_->type, input_->bytes, input_->data.int8);
 
+    Serial.printf("output type=%d bytes=%zu ptr=%p\n",
+              output_->type, output_->bytes, output_->data.int8);
+
+    Serial.printf("input scale=%g zp=%d\n",
+              input_->params.scale, input_->params.zero_point);
+
+    Serial.printf("output scale=%g zp=%d\n",
+              output_->params.scale, output_->params.zero_point);
+
+    Serial.printf("arena used=%zu / %d\n",
+              interpreter_->arena_used_bytes(), kTensorArenaSize);
+
+    Serial.printf("stack watermark=%u\n",
+              uxTaskGetStackHighWaterMark(NULL));
+
+    if (input_->type != kTfLiteInt8) {
+      die("Runtime input tensor is not int8");
+    }
+
+    if (output_->type != kTfLiteInt8) {
+      die("Runtime output tensor is not int8");
+    }
+
+    if (input_count_ != (size_t)(kSeqLen * kFeatures)) {
+      Serial.printf("Bad input size: expected %d, got %zu\n",
+                    kSeqLen * kFeatures,
+                    input_count_);
+      die("Bad input tensor size");
+    }
+
+    if (output_count_ != (size_t)kBands) {
+      Serial.printf("Bad output size: expected %d, got %zu\n",
+                    kBands,
+                    output_count_);
+      die("Bad output tensor size");
+    }
+
+    if (input_quant_.scale == 0.0f || output_quant_.scale == 0.0f) {
+      die("Invalid int8 quantization scale");
+    }
+
+// -------------- Invoke ------------------
     ensure_tflite_ok(interpreter_->Invoke(), "Invoke failed");
 
     const int8_t* output_data = (const int8_t*)output_data_;
@@ -337,6 +388,10 @@ public:
     memset(ola_norm_, 0, sizeof(ola_norm_));
     memset(history_, 0, sizeof(history_));
     memset(prev_log_bands_, 0, sizeof(prev_log_bands_));
+    memset(spec, 0, sizeof(spec));
+    memset(bands, 0, sizeof(bands));
+    memset(features, 0, sizeof(features));
+    memset(gains, 0, sizeof(gains));
     input_size_ = 0;
     has_prev_log_bands_ = false;
     frame_count_ = 0;
@@ -374,7 +429,7 @@ private:
   }
 
   void process_frame() {
-    ComplexSample spec[FFT_SIZE];
+    
 
     for (int i = 0; i < FFT_SIZE; ++i) {
       spec[i].real = input_[i] * window_[i];
@@ -383,14 +438,15 @@ private:
 
     fft(spec, FFT_SIZE, false);
 
-    float bands[kBands];
+    
     compute_bands(spec, bands);
 
-    float features[kFeatures];
+    
     compute_features(bands, &has_prev_log_bands_, prev_log_bands_, features); //prev_log_bands_? 
     update_history(history_, features);
 
-    float gains[kBands];
+    Serial.printf("loop stack watermark before RNN: %u\n",
+              uxTaskGetStackHighWaterMark(NULL));
     model_.run(history_, gains);
 
     if (frame_count_ % 1000 == 0) {
@@ -434,6 +490,10 @@ private:
 
   RnnBandModel model_;
   float window_[FFT_SIZE];
+  ComplexSample spec[FFT_SIZE];
+  float bands[kBands];
+  float features[kFeatures];
+  float gains[kBands];
   float input_[kInputCapacity];
   float ola_[kOlaCapacity];
   float ola_norm_[kOlaCapacity];

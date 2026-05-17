@@ -86,11 +86,16 @@ void setup() {
   Serial.begin(SERIAL_BAUD);
   delay(200);
   
+  Serial.printf("PSRAM size: %u\n", ESP.getPsramSize());
+Serial.printf("Free PSRAM: %u\n", ESP.getFreePsram());
+
   setupI2SMic();
   setupI2SSpeaker();
-  rnn_filter.init();
 
   Serial.println("stereo pipeline ready.");
+  rnn_filter.init();
+
+  
 
 
 }
