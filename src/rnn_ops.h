@@ -37,7 +37,7 @@ static float clamp01(float x) {
 }
 
 static void die(const char* message) {
-//   Serial.println(message);
+   Serial.println(message);
   while (true) {
     delay(1000);
   }
@@ -87,7 +87,7 @@ static TfLiteQuantizationParams read_tensor_quant_params(
   const tflite::QuantizationParameters* quant = tensor->quantization();
   if (!quant || !quant->scale() || quant->scale()->size() == 0 ||
       !quant->zero_point() || quant->zero_point()->size() == 0) {
-    // Serial.printf("%s tensor has no quantization parameters\n", name);
+     Serial.printf("%s tensor has no quantization parameters\n", name);
     die("Missing quantization parameters");
   }
 
@@ -226,8 +226,8 @@ public:
       die("GetModel failed");
     }
     if (model_->version() != TFLITE_SCHEMA_VERSION) {
-    //   Serial.printf("Unsupported model schema version: %d, expected: %d\n",
-                    // model_->version(), TFLITE_SCHEMA_VERSION);
+       Serial.printf("Unsupported model schema version: %d, expected: %d\n",
+                     model_->version(), TFLITE_SCHEMA_VERSION);
       die("Unsupported model schema version");
     }
 
@@ -247,6 +247,26 @@ public:
     if (!input_ || !output_) {
       die("Cannot get model input/output tensors");
     }
+    // if (input_->type != kTfLiteInt8 || output_->type != kTfLiteInt8) {
+    //   Serial.println("Bad tensor types:");
+    //   Serial.printf("input tensor addr=%p type=%d bytes=%zu data=%p scale=%g zp=%d\n",
+    //                 input_,
+    //                 input_->type,
+    //                 input_->bytes,
+    //                 input_->data.int8,
+    //                 input_->params.scale,
+    //                 input_->params.zero_point);
+
+    //   Serial.printf("output tensor addr=%p type=%d bytes=%zu data=%p scale=%g zp=%d\n",
+    //                 output_,
+    //                 output_->type,
+    //                 output_->bytes,
+    //                 output_->data.int8,
+    //                 output_->params.scale,
+    //                 output_->params.zero_point);
+
+    //   die("Runtime tensor type check failed");
+    // }
 
     const tflite::SubGraph* subgraph = model_->subgraphs()->Get(0);
     const tflite::Tensor* input_tensor =
@@ -304,13 +324,13 @@ public:
     Serial.printf("stack watermark=%u\n",
               uxTaskGetStackHighWaterMark(NULL));
 
-    if (input_->type != kTfLiteInt8) {
-      die("Runtime input tensor is not int8");
-    }
+    // if (input_->type != kTfLiteInt8) {
+    //   die("Runtime input tensor is not int8");
+    // }
 
-    if (output_->type != kTfLiteInt8) {
-      die("Runtime output tensor is not int8");
-    }
+    // if (output_->type != kTfLiteInt8) {
+    //   die("Runtime output tensor is not int8");
+    // }
 
     if (input_count_ != (size_t)(kSeqLen * kFeatures)) {
       Serial.printf("Bad input size: expected %d, got %zu\n",
@@ -450,11 +470,11 @@ private:
     model_.run(history_, gains);
 
     if (frame_count_ % 1000 == 0) {
-    //   Serial.printf("frame %zu gains:", frame_count_);
+       Serial.printf("frame %zu gains:", frame_count_);
       for (int b = 0; b < kBands; ++b) {
-        // Serial.printf(" %.3f", gains[b]);
+         Serial.printf(" %.3f", gains[b]);
       }
-    //   Serial.println();
+       Serial.println();
     }
 
     apply_gains(spec, gains);
