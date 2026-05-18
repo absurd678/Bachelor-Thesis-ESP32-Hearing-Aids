@@ -1,74 +1,95 @@
-#include <Arduino.h>
+#include <cstdint>
+#include <cstdio>
+
+#include "esp_err.h"
+#include "esp_heap_caps.h"
+#include "esp_log.h"
 #include "driver/gpio.h"
-#include "driver/i2s.h"
+#include "driver/i2s_std.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include "audio_config.h"
 #include "audio_tools.h"
 #include "lms_filters.h"
 #include "rnn_ops.h"
 
+static const char* TAG = "hearing_aids";
+static i2s_chan_handle_t mic_rx_chan = nullptr;
+static i2s_chan_handle_t spk_tx_chan = nullptr;
+
 static void checkEsp(esp_err_t err, const char* step) {
   if (err != ESP_OK) {
-    Serial.printf("%s failed: %s (%d)\n", step, esp_err_to_name(err), (int)err);
+    ESP_LOGE(TAG, "%s failed: %s (%d)", step, esp_err_to_name(err), (int)err);
     while (true) {
-      delay(1000);
+      vTaskDelay(pdMS_TO_TICKS(1000));
     }
   }
 }
 
 void setupI2SMic() {
-  const i2s_config_t i2s_config = {
-    .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_RX),
-    .sample_rate = SAMPLE_RATE,
-    .bits_per_sample = I2S_BITS_PER_SAMPLE_32BIT,
-    .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
-    .communication_format = I2S_COMM_FORMAT_STAND_I2S,
-    .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
-    .dma_buf_count = DMA_BUF_COUNT,
-    .dma_buf_len = 512,
-    .use_apll = true,
-    .tx_desc_auto_clear = true,
-    .fixed_mclk = 0
+  i2s_chan_config_t chan_cfg = {
+    .id = I2S_NUM_0,
+    .role = I2S_ROLE_MASTER,
+    .dma_desc_num = DMA_BUF_COUNT,
+    .dma_frame_num = 512,
+    .auto_clear = true,
+    .intr_priority = 1,
   };
 
-  const i2s_pin_config_t pin_config = {
-    .bck_io_num = I2S_MIC_SCK,
-    .ws_io_num = I2S_MIC_WS,
-    .data_out_num = I2S_PIN_NO_CHANGE,
-    .data_in_num = I2S_MIC_SD
+  i2s_std_config_t std_cfg = {
+    .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(SAMPLE_RATE),
+    .slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_32BIT, I2S_SLOT_MODE_STEREO),
+    .gpio_cfg = {
+      .mclk = I2S_GPIO_UNUSED,
+      .bclk = I2S_MIC_SCK,
+      .ws = I2S_MIC_WS,
+      .dout = I2S_GPIO_UNUSED,
+      .din = I2S_MIC_SD,
+      .invert_flags = {
+        .mclk_inv = false,
+        .bclk_inv = false,
+        .ws_inv = false,
+      },
+    },
   };
+  std_cfg.clk_cfg.clk_src = I2S_CLK_SRC_APLL;
 
-  checkEsp(i2s_driver_install(I2S_NUM_0, &i2s_config, 0, NULL), "mic i2s_driver_install");
-  checkEsp(i2s_set_pin(I2S_NUM_0, &pin_config), "mic i2s_set_pin");
-  checkEsp(i2s_zero_dma_buffer(I2S_NUM_0), "mic i2s_zero_dma_buffer");
-  checkEsp(i2s_set_clk(I2S_NUM_0, SAMPLE_RATE, I2S_BITS_PER_SAMPLE_32BIT, I2S_CHANNEL_STEREO), "mic i2s_set_clk");
+  checkEsp(i2s_new_channel(&chan_cfg, nullptr, &mic_rx_chan), "mic i2s_new_channel");
+  checkEsp(i2s_channel_init_std_mode(mic_rx_chan, &std_cfg), "mic i2s_channel_init_std_mode");
+  checkEsp(i2s_channel_enable(mic_rx_chan), "mic i2s_channel_enable");
 }
 
 void setupI2SSpeaker() {
-  const i2s_config_t i2s_config = {
-    .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_TX),
-    .sample_rate = SAMPLE_RATE,
-    .bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT,
-    .channel_format = I2S_CHANNEL_FMT_ONLY_LEFT,
-    .communication_format = I2S_COMM_FORMAT_STAND_I2S,
-    .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
-    .dma_buf_count = DMA_BUF_COUNT,
-    .dma_buf_len = 512,
-    .use_apll = false,
-    .tx_desc_auto_clear = true,
-    .fixed_mclk = 0
+  i2s_chan_config_t chan_cfg = {
+    .id = I2S_NUM_1,
+    .role = I2S_ROLE_MASTER,
+    .dma_desc_num = DMA_BUF_COUNT,
+    .dma_frame_num = 512,
+    .auto_clear = true,
+    .intr_priority = 1,
   };
 
-  const i2s_pin_config_t pin_config = {
-    .bck_io_num = I2S_SPK_SCK,
-    .ws_io_num = I2S_SPK_WS,
-    .data_out_num = I2S_SPK_SD,
-    .data_in_num = I2S_PIN_NO_CHANGE
+  i2s_std_config_t std_cfg = {
+    .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(SAMPLE_RATE),
+    .slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_MONO),
+    .gpio_cfg = {
+      .mclk = I2S_GPIO_UNUSED,
+      .bclk = I2S_SPK_SCK,
+      .ws = I2S_SPK_WS,
+      .dout = I2S_SPK_SD,
+      .din = I2S_GPIO_UNUSED,
+      .invert_flags = {
+        .mclk_inv = false,
+        .bclk_inv = false,
+        .ws_inv = false,
+      },
+    },
   };
+  std_cfg.slot_cfg.slot_mask = I2S_STD_SLOT_LEFT;
 
-  checkEsp(i2s_driver_install(I2S_NUM_1, &i2s_config, 0, NULL), "speaker i2s_driver_install");
-  checkEsp(i2s_set_pin(I2S_NUM_1, &pin_config), "speaker i2s_set_pin");
-  checkEsp(i2s_zero_dma_buffer(I2S_NUM_1), "speaker i2s_zero_dma_buffer");
-  checkEsp(i2s_set_clk(I2S_NUM_1, SAMPLE_RATE, I2S_BITS_PER_SAMPLE_16BIT, I2S_CHANNEL_MONO), "speaker i2s_set_clk");
+  checkEsp(i2s_new_channel(&chan_cfg, &spk_tx_chan, nullptr), "speaker i2s_new_channel");
+  checkEsp(i2s_channel_init_std_mode(spk_tx_chan, &std_cfg), "speaker i2s_channel_init_std_mode");
+  checkEsp(i2s_channel_enable(spk_tx_chan), "speaker i2s_channel_enable");
 }
 
 // -------------- GLOBAL VARIABLES ---------------
@@ -82,30 +103,11 @@ float left_delay = 0;
 float right_delay = 0;
 RealtimeRnnFilter rnn_filter;
 
-void setup() {
-  Serial.begin(SERIAL_BAUD);
-  delay(200);
-  
-  Serial.printf("PSRAM size: %u\n", ESP.getPsramSize());
-Serial.printf("Free PSRAM: %u\n", ESP.getFreePsram());
-
-  setupI2SMic();
-  setupI2SSpeaker();
-
-  Serial.println("stereo pipeline ready.");
-  rnn_filter.init();
-
-  
-
-
-}
-
-void loop() {
-  
+static void processAudio() {
   // ------------ i2s read ---------------
   size_t bytes_read = 0;
-  i2s_read(I2S_NUM_0, input, sizeof(input), &bytes_read, portMAX_DELAY);
-
+  checkEsp(i2s_channel_read(mic_rx_chan, input, sizeof(input), &bytes_read, portMAX_DELAY), "mic i2s_channel_read");
+  
   const size_t samples = bytes_read / sizeof(int32_t);
   const size_t frames = samples / 2;
 
@@ -141,7 +143,24 @@ void loop() {
 
   size_t bytes_written = 0;
   if (output_samples > 0) {
-    i2s_write(I2S_NUM_1, output, output_samples * sizeof(int16_t), &bytes_written, portMAX_DELAY);
+    checkEsp(i2s_channel_write(spk_tx_chan, output, output_samples * sizeof(int16_t), &bytes_written, portMAX_DELAY),
+             "speaker i2s_channel_write");
   }
+}
 
+extern "C" void app_main(void) {
+  vTaskDelay(pdMS_TO_TICKS(200));
+
+  ESP_LOGI(TAG, "PSRAM size: %zu", heap_caps_get_total_size(MALLOC_CAP_SPIRAM));
+  ESP_LOGI(TAG, "Free PSRAM: %zu", heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
+
+  setupI2SMic();
+  setupI2SSpeaker();
+
+  ESP_LOGI(TAG, "stereo pipeline ready.");
+  rnn_filter.init();
+
+  while (true) {
+    processAudio();
+  }
 }

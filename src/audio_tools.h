@@ -1,5 +1,8 @@
 #pragma once
-#include <Arduino.h>
+#include <cmath>
+#include <cstddef>
+#include <cstdint>
+
 #include "audio_config.h"
 
 struct ComplexSample {

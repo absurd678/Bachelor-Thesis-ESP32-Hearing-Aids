@@ -1,7 +1,10 @@
 #pragma once
 
-#include <Arduino.h>
+#include <algorithm>
+#include <cstdio>
 #include <esp_heap_caps.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
 #include <math.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -37,9 +40,9 @@ static float clamp01(float x) {
 }
 
 static void die(const char* message) {
-   Serial.println(message);
+  printf("%s\n", message);
   while (true) {
-    delay(1000);
+    vTaskDelay(pdMS_TO_TICKS(1000));
   }
 }
 
@@ -53,7 +56,7 @@ static uint8_t* alloc_psram_aligned(size_t size, size_t alignment) {
   const size_t padded_size = size + alignment - 1;
   void* raw = heap_caps_malloc(padded_size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
   if (!raw) {
-    Serial.printf("PSRAM alloc failed: %zu bytes\n", padded_size);
+    printf("PSRAM alloc failed: %zu bytes\n", padded_size);
     die("PSRAM alloc failed");
   }
 
@@ -87,7 +90,7 @@ static TfLiteQuantizationParams read_tensor_quant_params(
   const tflite::QuantizationParameters* quant = tensor->quantization();
   if (!quant || !quant->scale() || quant->scale()->size() == 0 ||
       !quant->zero_point() || quant->zero_point()->size() == 0) {
-     Serial.printf("%s tensor has no quantization parameters\n", name);
+    printf("%s tensor has no quantization parameters\n", name);
     die("Missing quantization parameters");
   }
 
@@ -226,8 +229,8 @@ public:
       die("GetModel failed");
     }
     if (model_->version() != TFLITE_SCHEMA_VERSION) {
-       Serial.printf("Unsupported model schema version: %d, expected: %d\n",
-                     model_->version(), TFLITE_SCHEMA_VERSION);
+      printf("Unsupported model schema version: %d, expected: %d\n",
+             model_->version(), TFLITE_SCHEMA_VERSION);
       die("Unsupported model schema version");
     }
 
@@ -285,10 +288,10 @@ public:
       die("Invalid model input/output tensor data");
     }
 
-    Serial.println("RNN initialized");
-    Serial.printf("Arena size: %zu bytes\n", (size_t)kTensorArenaSize);
-    Serial.printf("Arena addr: %p\n", tensor_arena_);
-    Serial.printf("Arena used: %zu bytes\n", interpreter_->arena_used_bytes());
+    printf("RNN initialized\n");
+    printf("Arena size: %zu bytes\n", (size_t)kTensorArenaSize);
+    printf("Arena addr: %p\n", tensor_arena_);
+    printf("Arena used: %zu bytes\n", interpreter_->arena_used_bytes());
   }
 
   void run(const float history[kSeqLen][kFeatures], float gains[kBands]) {
@@ -306,23 +309,23 @@ public:
       input_data[idx++] = quantize_int8(0.0f, input_quant_);
     }
     // ------------ Debug output -------------
-    Serial.printf("input type=%d bytes=%zu ptr=%p\n",
-              input_->type, input_->bytes, input_->data.int8);
+    printf("input type=%d bytes=%zu ptr=%p\n",
+           input_->type, input_->bytes, input_->data.int8);
 
-    Serial.printf("output type=%d bytes=%zu ptr=%p\n",
-              output_->type, output_->bytes, output_->data.int8);
+    printf("output type=%d bytes=%zu ptr=%p\n",
+           output_->type, output_->bytes, output_->data.int8);
 
-    Serial.printf("input scale=%g zp=%d\n",
-              input_->params.scale, input_->params.zero_point);
+    printf("input scale=%g zp=%d\n",
+           input_->params.scale, input_->params.zero_point);
 
-    Serial.printf("output scale=%g zp=%d\n",
-              output_->params.scale, output_->params.zero_point);
+    printf("output scale=%g zp=%d\n",
+           output_->params.scale, output_->params.zero_point);
 
-    Serial.printf("arena used=%zu / %d\n",
-              interpreter_->arena_used_bytes(), kTensorArenaSize);
+    printf("arena used=%zu / %d\n",
+           interpreter_->arena_used_bytes(), kTensorArenaSize);
 
-    Serial.printf("stack watermark=%u\n",
-              uxTaskGetStackHighWaterMark(NULL));
+    printf("stack watermark=%u\n",
+           uxTaskGetStackHighWaterMark(NULL));
 
     // if (input_->type != kTfLiteInt8) {
     //   die("Runtime input tensor is not int8");
@@ -333,16 +336,16 @@ public:
     // }
 
     if (input_count_ != (size_t)(kSeqLen * kFeatures)) {
-      Serial.printf("Bad input size: expected %d, got %zu\n",
-                    kSeqLen * kFeatures,
-                    input_count_);
+      printf("Bad input size: expected %d, got %zu\n",
+             kSeqLen * kFeatures,
+             input_count_);
       die("Bad input tensor size");
     }
 
     if (output_count_ != (size_t)kBands) {
-      Serial.printf("Bad output size: expected %d, got %zu\n",
-                    kBands,
-                    output_count_);
+      printf("Bad output size: expected %d, got %zu\n",
+             kBands,
+             output_count_);
       die("Bad output tensor size");
     }
 
@@ -355,7 +358,7 @@ public:
 
     const int8_t* output_data = (const int8_t*)output_data_;
     for (int b = 0; b < kBands; ++b) {
-      const size_t src = output_count_ > 0 ? min((size_t)b, output_count_ - 1) : 0;
+      const size_t src = output_count_ > 0 ? std::min((size_t)b, output_count_ - 1) : 0;
       gains[b] = clamp01(dequantize_int8(output_data[src], output_quant_));
     }
   }
@@ -465,16 +468,16 @@ private:
     compute_features(bands, &has_prev_log_bands_, prev_log_bands_, features); //prev_log_bands_? 
     update_history(history_, features);
 
-    Serial.printf("loop stack watermark before RNN: %u\n",
-              uxTaskGetStackHighWaterMark(NULL));
+    printf("loop stack watermark before RNN: %u\n",
+           uxTaskGetStackHighWaterMark(NULL));
     model_.run(history_, gains);
 
     if (frame_count_ % 1000 == 0) {
-       Serial.printf("frame %zu gains:", frame_count_);
+      printf("frame %zu gains:", frame_count_);
       for (int b = 0; b < kBands; ++b) {
-         Serial.printf(" %.3f", gains[b]);
+        printf(" %.3f", gains[b]);
       }
-       Serial.println();
+      printf("\n");
     }
 
     apply_gains(spec, gains);
