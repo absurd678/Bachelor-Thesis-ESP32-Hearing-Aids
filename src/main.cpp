@@ -84,7 +84,7 @@ void setupI2SSpeaker() {
 
 // -------------- GLOBAL VARIABLES ---------------
 int32_t input[AUDIO_BUF_LEN * 2];
-int16_t output[AUDIO_BUF_LEN * 2];//kMaxRealtimeOutput];
+int16_t output[AUDIO_BUF_LEN];//kMaxRealtimeOutput];
 float filter_block[AUDIO_BUF_LEN];
 
 LMSFilter left_filter(TAPS, MU);
@@ -98,9 +98,7 @@ static int16_t micToPcm16(int32_t sample) {
 }
 
 static void setOutputFrame(size_t frame, int16_t sample) {
-  const size_t out = frame << 1;
-  output[out] = sample;
-  output[out + 1] = sample;
+  output[frame] = sample;
 }
 
 static void logAudioStats(size_t frames, size_t bytes_read, size_t bytes_written) {
@@ -125,7 +123,7 @@ static void logAudioStats(size_t frames, size_t bytes_read, size_t bytes_written
     if (input[li] > max_l) max_l = input[li];
     if (input[ri] < min_r) min_r = input[ri];
     if (input[ri] > max_r) max_r = input[ri];
-    const int16_t out = output[i << 1];
+    const int16_t out = output[i];
     if (out < min_o) min_o = out;
     if (out > max_o) max_o = out;
   }
@@ -158,7 +156,7 @@ static void writeTestTone() {
   }
 
   size_t bytes_written = 0;
-  checkEsp(i2s_write(I2S_NUM_1, output, AUDIO_BUF_LEN * 2 * sizeof(int16_t), &bytes_written, portMAX_DELAY),
+  checkEsp(i2s_write(I2S_NUM_1, output, AUDIO_BUF_LEN * sizeof(int16_t), &bytes_written, portMAX_DELAY),
            "speaker test tone i2s_write");
 }
 #endif
@@ -212,7 +210,7 @@ static void processAudio() {
 
   size_t bytes_written = 0;
   // if (output_samples > 0) {
-    checkEsp(i2s_write(I2S_NUM_1, output, frames * 2 * sizeof(int16_t), &bytes_written, portMAX_DELAY),
+    checkEsp(i2s_write(I2S_NUM_1, output, frames * sizeof(int16_t), &bytes_written, portMAX_DELAY),
              "speaker i2s_write");
     logAudioStats(frames, bytes_read, bytes_written);
     
@@ -223,7 +221,6 @@ static void processAudio() {
 static void audioTask(void*) {
   while (true) {
     processAudio();
-    vTaskDelay(1);
   }
 }
 
