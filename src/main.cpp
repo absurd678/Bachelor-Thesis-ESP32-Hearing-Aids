@@ -6,7 +6,7 @@
 #include "esp_heap_caps.h"
 #include "esp_log.h"
 #include "driver/gpio.h"
-#include "driver/i2s_std.h"
+#include "driver/i2s.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "audio_config.h"
@@ -15,9 +15,6 @@
 //#include "rnn_ops.h"
 
 static const char* TAG = "hearing_aids";
-static i2s_chan_handle_t mic_rx_chan = nullptr;
-static i2s_chan_handle_t spk_tx_chan = nullptr;
-
 static void checkEsp(esp_err_t err, const char* step) {
   if (err != ESP_OK) {
     ESP_LOGE(TAG, "%s failed: %s (%d)", step, esp_err_to_name(err), (int)err);
@@ -28,60 +25,66 @@ static void checkEsp(esp_err_t err, const char* step) {
 }
 
 void setupI2SMic() {
-  i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_0, I2S_ROLE_MASTER);
-
-  i2s_std_config_t std_cfg = {
-    .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(SAMPLE_RATE),
-    .slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_32BIT, I2S_SLOT_MODE_STEREO),
-    .gpio_cfg = {
-      .mclk = I2S_GPIO_UNUSED,
-      .bclk = I2S_MIC_SCK,
-      .ws = I2S_MIC_WS,
-      .dout = I2S_GPIO_UNUSED,
-      .din = I2S_MIC_SD,
-      .invert_flags = {
-        .mclk_inv = false,
-        .bclk_inv = false,
-        .ws_inv = false,
-      },
-    },
+  const i2s_config_t i2s_config = {
+    .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_RX),
+    .sample_rate = SAMPLE_RATE,
+    .bits_per_sample = I2S_BITS_PER_SAMPLE_32BIT,
+    .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
+    .communication_format = I2S_COMM_FORMAT_STAND_I2S,
+    .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
+    .dma_buf_count = DMA_BUF_COUNT,
+    .dma_buf_len = 512,
+    .use_apll = true,
+    .tx_desc_auto_clear = true,
+    .fixed_mclk = 0
   };
 
-  checkEsp(i2s_new_channel(&chan_cfg, nullptr, &mic_rx_chan), "mic i2s_new_channel");
-  checkEsp(i2s_channel_init_std_mode(mic_rx_chan, &std_cfg), "mic i2s_channel_init_std_mode");
-  checkEsp(i2s_channel_enable(mic_rx_chan), "mic i2s_channel_enable");
+  const i2s_pin_config_t pin_config = {
+    .mck_io_num = I2S_PIN_NO_CHANGE,
+    .bck_io_num = I2S_MIC_SCK,
+    .ws_io_num = I2S_MIC_WS,
+    .data_out_num = I2S_PIN_NO_CHANGE,
+    .data_in_num = I2S_MIC_SD
+  };
+
+  checkEsp(i2s_driver_install(I2S_NUM_0, &i2s_config, 0, nullptr), "mic i2s_driver_install");
+  checkEsp(i2s_set_pin(I2S_NUM_0, &pin_config), "mic i2s_set_pin");
+  checkEsp(i2s_zero_dma_buffer(I2S_NUM_0), "mic i2s_zero_dma_buffer");
+  checkEsp(i2s_set_clk(I2S_NUM_0, SAMPLE_RATE, I2S_BITS_PER_SAMPLE_32BIT, I2S_CHANNEL_STEREO), "mic i2s_set_clk");
 }
 
 void setupI2SSpeaker() {
-  
-  i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_1, I2S_ROLE_MASTER);
-
-  i2s_std_config_t std_cfg = {
-    .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(SAMPLE_RATE),
-    .slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_MONO),
-    .gpio_cfg = {
-      .mclk = I2S_GPIO_UNUSED,
-      .bclk = I2S_SPK_SCK,
-      .ws = I2S_SPK_WS,
-      .dout = I2S_SPK_SD,
-      .din = I2S_GPIO_UNUSED,
-      .invert_flags = {
-        .mclk_inv = false,
-        .bclk_inv = false,
-        .ws_inv = false,
-      },
-    },
+  const i2s_config_t i2s_config = {
+    .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_TX),
+    .sample_rate = SAMPLE_RATE,
+    .bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT,
+    .channel_format = I2S_CHANNEL_FMT_ONLY_LEFT,
+    .communication_format = I2S_COMM_FORMAT_STAND_I2S,
+    .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
+    .dma_buf_count = DMA_BUF_COUNT,
+    .dma_buf_len = 512,
+    .use_apll = false,
+    .tx_desc_auto_clear = true,
+    .fixed_mclk = 0
   };
-  //std_cfg.slot_cfg.slot_mask = I2S_STD_SLOT_LEFT;
 
-  checkEsp(i2s_new_channel(&chan_cfg, &spk_tx_chan, nullptr), "speaker i2s_new_channel");
-  checkEsp(i2s_channel_init_std_mode(spk_tx_chan, &std_cfg), "speaker i2s_channel_init_std_mode");
-  checkEsp(i2s_channel_enable(spk_tx_chan), "speaker i2s_channel_enable");
+  const i2s_pin_config_t pin_config = {
+    .mck_io_num = I2S_PIN_NO_CHANGE,
+    .bck_io_num = I2S_SPK_SCK,
+    .ws_io_num = I2S_SPK_WS,
+    .data_out_num = I2S_SPK_SD,
+    .data_in_num = I2S_PIN_NO_CHANGE
+  };
+
+  checkEsp(i2s_driver_install(I2S_NUM_1, &i2s_config, 0, nullptr), "speaker i2s_driver_install");
+  checkEsp(i2s_set_pin(I2S_NUM_1, &pin_config), "speaker i2s_set_pin");
+  checkEsp(i2s_zero_dma_buffer(I2S_NUM_1), "speaker i2s_zero_dma_buffer");
+  checkEsp(i2s_set_clk(I2S_NUM_1, SAMPLE_RATE, I2S_BITS_PER_SAMPLE_16BIT, I2S_CHANNEL_MONO), "speaker i2s_set_clk");
 }
 
 // -------------- GLOBAL VARIABLES ---------------
 int32_t input[AUDIO_BUF_LEN * 2];
-int16_t output[AUDIO_BUF_LEN];//kMaxRealtimeOutput];
+int16_t output[AUDIO_BUF_LEN * 2];//kMaxRealtimeOutput];
 float filter_block[AUDIO_BUF_LEN];
 
 LMSFilter left_filter(TAPS, MU);
@@ -92,6 +95,12 @@ float right_delay = 0;
 
 static int16_t micToPcm16(int32_t sample) {
   return clamp16(normalizeMicSample(sample) * 32767.0f);
+}
+
+static void setOutputFrame(size_t frame, int16_t sample) {
+  const size_t out = frame << 1;
+  output[out] = sample;
+  output[out + 1] = sample;
 }
 
 static void logAudioStats(size_t frames, size_t bytes_read, size_t bytes_written) {
@@ -116,8 +125,9 @@ static void logAudioStats(size_t frames, size_t bytes_read, size_t bytes_written
     if (input[li] > max_l) max_l = input[li];
     if (input[ri] < min_r) min_r = input[ri];
     if (input[ri] > max_r) max_r = input[ri];
-    if (output[i] < min_o) min_o = output[i];
-    if (output[i] > max_o) max_o = output[i];
+    const int16_t out = output[i << 1];
+    if (out < min_o) min_o = out;
+    if (out > max_o) max_o = out;
   }
 
   ESP_LOGI(TAG,
@@ -140,7 +150,7 @@ static void writeTestTone() {
   const float phase_step = TWO_PI_F * AUDIO_TEST_TONE_HZ / (float)SAMPLE_RATE;
 
   for (size_t i = 0; i < AUDIO_BUF_LEN; ++i) {
-    output[i] = clamp16(sinf(phase) * AUDIO_TEST_TONE_GAIN * 32767.0f);
+    setOutputFrame(i, clamp16(sinf(phase) * AUDIO_TEST_TONE_GAIN * 32767.0f));
     phase += phase_step;
     if (phase >= TWO_PI_F) {
       phase -= TWO_PI_F;
@@ -148,8 +158,8 @@ static void writeTestTone() {
   }
 
   size_t bytes_written = 0;
-  checkEsp(i2s_channel_write(spk_tx_chan, output, sizeof(output), &bytes_written, portMAX_DELAY),
-           "speaker test tone i2s_channel_write");
+  checkEsp(i2s_write(I2S_NUM_1, output, AUDIO_BUF_LEN * 2 * sizeof(int16_t), &bytes_written, portMAX_DELAY),
+           "speaker test tone i2s_write");
 }
 #endif
 
@@ -160,7 +170,7 @@ static void processAudio() {
 #else
   // ------------ i2s read ---------------
   size_t bytes_read = 0;
-  checkEsp(i2s_channel_read(mic_rx_chan, input, sizeof(input), &bytes_read, portMAX_DELAY), "mic i2s_channel_read");
+  checkEsp(i2s_read(I2S_NUM_0, input, sizeof(input), &bytes_read, portMAX_DELAY), "mic i2s_read");
   
   const size_t samples = bytes_read / sizeof(int32_t);
   const size_t frames = samples / 2;
@@ -169,7 +179,7 @@ static void processAudio() {
     size_t li = (i << 1);
 
 #if AUDIO_MODE == AUDIO_MODE_PASSTHROUGH
-    output[i] = micToPcm16(input[li]);
+    setOutputFrame(i, micToPcm16(input[li]));
 #elif AUDIO_MODE == AUDIO_MODE_LMS
     size_t ri = li + 1;
     float xl = normalizeMicSample(input[li]);
@@ -189,7 +199,7 @@ static void processAudio() {
     left_delay = xl;
     right_delay = xr;
 
-    output[i] = clamp16(filter_block[i] * 32767.0f);
+    setOutputFrame(i, clamp16(filter_block[i] * 32767.0f));
 #endif
   }
   
@@ -202,8 +212,8 @@ static void processAudio() {
 
   size_t bytes_written = 0;
   // if (output_samples > 0) {
-    checkEsp(i2s_channel_write(spk_tx_chan, output, frames * sizeof(int16_t), &bytes_written, portMAX_DELAY),
-             "speaker i2s_channel_write");
+    checkEsp(i2s_write(I2S_NUM_1, output, frames * 2 * sizeof(int16_t), &bytes_written, portMAX_DELAY),
+             "speaker i2s_write");
     logAudioStats(frames, bytes_read, bytes_written);
     
   // }
