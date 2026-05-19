@@ -235,7 +235,7 @@ extern "C" void app_main(void) {
 
   ESP_LOGI(TAG, "stereo pipeline ready.");
   ESP_LOGI(TAG, "audio mode: %d", AUDIO_MODE);
-  //rnn_filter.init();
+  rnn_filter.init();
 
   xTaskCreatePinnedToCore(audioTask, "audio", 8192, nullptr, 5, nullptr, 1);
 }
