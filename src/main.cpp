@@ -12,7 +12,7 @@
 #include "audio_config.h"
 #include "audio_tools.h"
 #include "lms_filters.h"
-//#include "rnn_ops.h"
+#include "rnn_ops.h"
 
 static const char* TAG = "hearing_aids";
 static void checkEsp(esp_err_t err, const char* step) {
@@ -91,7 +91,7 @@ LMSFilter left_filter(TAPS, MU);
 LMSFilter right_filter(TAPS, MU);
 float left_delay = 0;
 float right_delay = 0;
-// RealtimeRnnFilter rnn_filter;
+RealtimeRnnFilter rnn_filter;
 
 static int16_t micToPcm16(int32_t sample) {
   return clamp16(normalizeMicSample(sample) * 32767.0f);
@@ -197,20 +197,20 @@ static void processAudio() {
     left_delay = xl;
     right_delay = xr;
 
-    setOutputFrame(i, clamp16(filter_block[i] * 32767.0f));
+    //setOutputFrame(i, clamp16(filter_block[i] * 32767.0f));
 #endif
   }
   
-  // const size_t output_samples = rnn_filter.process(
-  //   filter_block,
-  //   frames,
-  //   output,
-  //   kMaxRealtimeOutput
-  // );
+  const size_t output_samples = rnn_filter.process(
+    filter_block,
+    frames,
+    output,
+    kMaxRealtimeOutput
+  );
 
   size_t bytes_written = 0;
   // if (output_samples > 0) {
-    checkEsp(i2s_write(I2S_NUM_1, output, frames * sizeof(int16_t), &bytes_written, portMAX_DELAY),
+    checkEsp(i2s_write(I2S_NUM_1, output, output_samples * sizeof(int16_t), &bytes_written, portMAX_DELAY),
              "speaker i2s_write");
     logAudioStats(frames, bytes_read, bytes_written);
     

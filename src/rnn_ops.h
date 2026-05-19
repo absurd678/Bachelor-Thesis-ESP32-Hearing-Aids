@@ -229,7 +229,7 @@ public:
       die("GetModel failed");
     }
     if (model_->version() != TFLITE_SCHEMA_VERSION) {
-      printf("Unsupported model schema version: %d, expected: %d\n",
+      printf("Unsupported model schema version: %lu, expected: %d\n",
              model_->version(), TFLITE_SCHEMA_VERSION);
       die("Unsupported model schema version");
     }
@@ -315,10 +315,10 @@ public:
     printf("output type=%d bytes=%zu ptr=%p\n",
            output_->type, output_->bytes, output_->data.int8);
 
-    printf("input scale=%g zp=%d\n",
+    printf("input scale=%g zp=%ld\n",
            input_->params.scale, input_->params.zero_point);
 
-    printf("output scale=%g zp=%d\n",
+    printf("output scale=%g zp=%ld\n",
            output_->params.scale, output_->params.zero_point);
 
     printf("arena used=%zu / %d\n",
