@@ -1,5 +1,6 @@
 #include <cstdint>
 #include <cstdio>
+#include <limits>
 
 #include "esp_err.h"
 #include "esp_heap_caps.h"
@@ -11,7 +12,7 @@
 #include "audio_config.h"
 #include "audio_tools.h"
 #include "lms_filters.h"
-#include "rnn_ops.h"
+//#include "rnn_ops.h"
 
 static const char* TAG = "hearing_aids";
 static i2s_chan_handle_t mic_rx_chan = nullptr;
@@ -27,14 +28,7 @@ static void checkEsp(esp_err_t err, const char* step) {
 }
 
 void setupI2SMic() {
-  i2s_chan_config_t chan_cfg = {
-    .id = I2S_NUM_0,
-    .role = I2S_ROLE_MASTER,
-    .dma_desc_num = DMA_BUF_COUNT,
-    .dma_frame_num = 512,
-    .auto_clear = true,
-    .intr_priority = 1,
-  };
+  i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_0, I2S_ROLE_MASTER);
 
   i2s_std_config_t std_cfg = {
     .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(SAMPLE_RATE),
@@ -52,7 +46,6 @@ void setupI2SMic() {
       },
     },
   };
-  std_cfg.clk_cfg.clk_src = I2S_CLK_SRC_APLL;
 
   checkEsp(i2s_new_channel(&chan_cfg, nullptr, &mic_rx_chan), "mic i2s_new_channel");
   checkEsp(i2s_channel_init_std_mode(mic_rx_chan, &std_cfg), "mic i2s_channel_init_std_mode");
@@ -60,14 +53,8 @@ void setupI2SMic() {
 }
 
 void setupI2SSpeaker() {
-  i2s_chan_config_t chan_cfg = {
-    .id = I2S_NUM_1,
-    .role = I2S_ROLE_MASTER,
-    .dma_desc_num = DMA_BUF_COUNT,
-    .dma_frame_num = 512,
-    .auto_clear = true,
-    .intr_priority = 1,
-  };
+  
+  i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_1, I2S_ROLE_MASTER);
 
   i2s_std_config_t std_cfg = {
     .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(SAMPLE_RATE),
@@ -85,7 +72,7 @@ void setupI2SSpeaker() {
       },
     },
   };
-  std_cfg.slot_cfg.slot_mask = I2S_STD_SLOT_LEFT;
+  //std_cfg.slot_cfg.slot_mask = I2S_STD_SLOT_LEFT;
 
   checkEsp(i2s_new_channel(&chan_cfg, &spk_tx_chan, nullptr), "speaker i2s_new_channel");
   checkEsp(i2s_channel_init_std_mode(spk_tx_chan, &std_cfg), "speaker i2s_channel_init_std_mode");
@@ -94,16 +81,83 @@ void setupI2SSpeaker() {
 
 // -------------- GLOBAL VARIABLES ---------------
 int32_t input[AUDIO_BUF_LEN * 2];
-int16_t output[kMaxRealtimeOutput];
+int16_t output[AUDIO_BUF_LEN];//kMaxRealtimeOutput];
 float filter_block[AUDIO_BUF_LEN];
 
 LMSFilter left_filter(TAPS, MU);
 LMSFilter right_filter(TAPS, MU);
 float left_delay = 0;
 float right_delay = 0;
-RealtimeRnnFilter rnn_filter;
+// RealtimeRnnFilter rnn_filter;
+
+static int16_t micToPcm16(int32_t sample) {
+  return clamp16(normalizeMicSample(sample) * 32767.0f);
+}
+
+static void logAudioStats(size_t frames, size_t bytes_read, size_t bytes_written) {
+#if AUDIO_DEBUG_STATS
+  static uint32_t blocks = 0;
+  if (++blocks < 200) {
+    return;
+  }
+  blocks = 0;
+
+  int32_t min_l = std::numeric_limits<int32_t>::max();
+  int32_t max_l = std::numeric_limits<int32_t>::min();
+  int32_t min_r = std::numeric_limits<int32_t>::max();
+  int32_t max_r = std::numeric_limits<int32_t>::min();
+  int16_t min_o = std::numeric_limits<int16_t>::max();
+  int16_t max_o = std::numeric_limits<int16_t>::min();
+
+  for (size_t i = 0; i < frames; ++i) {
+    const size_t li = i << 1;
+    const size_t ri = li + 1;
+    if (input[li] < min_l) min_l = input[li];
+    if (input[li] > max_l) max_l = input[li];
+    if (input[ri] < min_r) min_r = input[ri];
+    if (input[ri] > max_r) max_r = input[ri];
+    if (output[i] < min_o) min_o = output[i];
+    if (output[i] > max_o) max_o = output[i];
+  }
+
+  ESP_LOGI(TAG,
+           "audio frames=%u read=%u written=%u inL=[%ld,%ld] inR=[%ld,%ld] out=[%d,%d]",
+           (unsigned)frames,
+           (unsigned)bytes_read,
+           (unsigned)bytes_written,
+           (long)min_l,
+           (long)max_l,
+           (long)min_r,
+           (long)max_r,
+           (int)min_o,
+           (int)max_o);
+#endif
+}
+
+#if AUDIO_MODE == AUDIO_MODE_TEST_TONE
+static void writeTestTone() {
+  static float phase = 0.0f;
+  const float phase_step = TWO_PI_F * AUDIO_TEST_TONE_HZ / (float)SAMPLE_RATE;
+
+  for (size_t i = 0; i < AUDIO_BUF_LEN; ++i) {
+    output[i] = clamp16(sinf(phase) * AUDIO_TEST_TONE_GAIN * 32767.0f);
+    phase += phase_step;
+    if (phase >= TWO_PI_F) {
+      phase -= TWO_PI_F;
+    }
+  }
+
+  size_t bytes_written = 0;
+  checkEsp(i2s_channel_write(spk_tx_chan, output, sizeof(output), &bytes_written, portMAX_DELAY),
+           "speaker test tone i2s_channel_write");
+}
+#endif
 
 static void processAudio() {
+#if AUDIO_MODE == AUDIO_MODE_TEST_TONE
+  writeTestTone();
+  return;
+#else
   // ------------ i2s read ---------------
   size_t bytes_read = 0;
   checkEsp(i2s_channel_read(mic_rx_chan, input, sizeof(input), &bytes_read, portMAX_DELAY), "mic i2s_channel_read");
@@ -111,10 +165,12 @@ static void processAudio() {
   const size_t samples = bytes_read / sizeof(int32_t);
   const size_t frames = samples / 2;
 
-  // -------------- lms processing -----------------
   for (size_t i = 0; i < frames; ++i) {
-    
     size_t li = (i << 1);
+
+#if AUDIO_MODE == AUDIO_MODE_PASSTHROUGH
+    output[i] = micToPcm16(input[li]);
+#elif AUDIO_MODE == AUDIO_MODE_LMS
     size_t ri = li + 1;
     float xl = normalizeMicSample(input[li]);
     float xr = normalizeMicSample(input[ri]);
@@ -132,19 +188,32 @@ static void processAudio() {
 
     left_delay = xl;
     right_delay = xr;
-  }
 
-  const size_t output_samples = rnn_filter.process(
-    filter_block,
-    frames,
-    output,
-    kMaxRealtimeOutput
-  );
+    output[i] = clamp16(filter_block[i] * 32767.0f);
+#endif
+  }
+  
+  // const size_t output_samples = rnn_filter.process(
+  //   filter_block,
+  //   frames,
+  //   output,
+  //   kMaxRealtimeOutput
+  // );
 
   size_t bytes_written = 0;
-  if (output_samples > 0) {
-    checkEsp(i2s_channel_write(spk_tx_chan, output, output_samples * sizeof(int16_t), &bytes_written, portMAX_DELAY),
+  // if (output_samples > 0) {
+    checkEsp(i2s_channel_write(spk_tx_chan, output, frames * sizeof(int16_t), &bytes_written, portMAX_DELAY),
              "speaker i2s_channel_write");
+    logAudioStats(frames, bytes_read, bytes_written);
+    
+  // }
+#endif
+}
+
+static void audioTask(void*) {
+  while (true) {
+    processAudio();
+    vTaskDelay(1);
   }
 }
 
@@ -158,9 +227,8 @@ extern "C" void app_main(void) {
   setupI2SSpeaker();
 
   ESP_LOGI(TAG, "stereo pipeline ready.");
-  rnn_filter.init();
+  ESP_LOGI(TAG, "audio mode: %d", AUDIO_MODE);
+  //rnn_filter.init();
 
-  while (true) {
-    processAudio();
-  }
+  xTaskCreatePinnedToCore(audioTask, "audio", 8192, nullptr, 5, nullptr, 1);
 }
