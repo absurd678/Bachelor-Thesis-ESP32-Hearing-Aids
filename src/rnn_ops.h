@@ -218,11 +218,11 @@ public:
   }
 
   void init() {
-    if (!tensor_arena_) {
-      tensor_arena_ = alloc_psram_aligned(kTensorArenaSize, 16);
-    } else {
+    // if (!tensor_arena_) {
+    //   tensor_arena_ = alloc_psram_aligned(kTensorArenaSize, 16);
+    // } else {
       memset(tensor_arena_, 0, kTensorArenaSize);
-    }
+    // }
 
     model_ = tflite::GetModel(MODEL_DATA);
     if (!model_) {
