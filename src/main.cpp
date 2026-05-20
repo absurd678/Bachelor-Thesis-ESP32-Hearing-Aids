@@ -183,19 +183,19 @@ static void processAudio() {
     float xl = normalizeMicSample(input[li]);
     float xr = normalizeMicSample(input[ri]);
     
-    const float xld = left_delay;
-    const float xrd = right_delay;
+    // const float xld = left_delay;
+    // const float xrd = right_delay;
 
-    const float p1 = left_filter.process(xl, xld);
-    const float rr = xrd - p1;
+    // const float p1 = left_filter.process(xl, xld);
+    // const float rr = xrd - p1;
 
-    const float p2 = right_filter.process(xr, xrd);
-    const float rl = xld - p2;
+    // const float p2 = right_filter.process(xr, xrd);
+    // const float rl = xld - p2;
 
-    filter_block[i] = 0.5f * (rl + rr);
+    filter_block[i] = 0.5f * (xl + xr);
 
-    left_delay = xl;
-    right_delay = xr;
+    // left_delay = xl;
+    // right_delay = xr;
 
     //setOutputFrame(i, clamp16(filter_block[i] * 32767.0f));
 #endif
