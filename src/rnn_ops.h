@@ -52,12 +52,12 @@ static void ensure_tflite_ok(TfLiteStatus status, const char* message) {
   }
 }
 
-static uint8_t* alloc_psram_aligned(size_t size, size_t alignment) {
+static uint8_t* alloc_internal_ram_aligned(size_t size, size_t alignment) {
   const size_t padded_size = size + alignment - 1;
-  void* raw = heap_caps_malloc(padded_size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+  void* raw = heap_caps_malloc(padded_size, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
   if (!raw) {
-    printf("PSRAM alloc failed: %zu bytes\n", padded_size);
-    die("PSRAM alloc failed");
+    printf("Internal RAM alloc failed: %zu bytes\n", padded_size);
+    die("Internal RAM alloc failed");
   }
 
   const uintptr_t raw_addr = reinterpret_cast<uintptr_t>(raw);
@@ -218,11 +218,11 @@ public:
   }
 
   void init() {
-    // if (!tensor_arena_) {
-    //   tensor_arena_ = alloc_psram_aligned(kTensorArenaSize, 16);
-    // } else {
+    if (!tensor_arena_) {
+      tensor_arena_ = alloc_internal_ram_aligned(kTensorArenaSize, 16);
+    } else {
       memset(tensor_arena_, 0, kTensorArenaSize);
-    // }
+    }
 
     model_ = tflite::GetModel(MODEL_DATA);
     if (!model_) {
