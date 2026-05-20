@@ -26,5 +26,5 @@
 #define AUDIO_TEST_TONE_HZ 440.0f
 #define AUDIO_TEST_TONE_GAIN 0.15f
 // --------- RNN ------------
-#define kTensorArenaSize (1024 * 1024)
+#define kTensorArenaSize (64 * 1024)
 // #define TFLITE_EMULATE_FLOAT
