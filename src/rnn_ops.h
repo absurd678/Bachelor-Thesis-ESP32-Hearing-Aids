@@ -20,7 +20,7 @@
 #include "tensorflow/lite/schema/schema_generated.h"
 
 #ifndef MODEL_DATA
-#define MODEL_DATA _content_drive_MyDrive_Colab_RNN_export_rnn_bands_int8_tflite
+#define MODEL_DATA _content_drive_MyDrive_Colab_RNN_export_rnn_bands_int8_micro_tflite
 #endif
 
 static constexpr int kSeqLen = 8;
@@ -470,7 +470,10 @@ private:
 
     printf("loop stack watermark before RNN: %u\n",
            uxTaskGetStackHighWaterMark(NULL));
-    model_.run(history_, gains);
+    // model_.run(history_, gains);
+    for (int b = 0; b < kBands; ++b) {
+      gains[b] = 1.0f;
+    }
 
     if (frame_count_ % 1000 == 0) {
       printf("frame %zu gains:", frame_count_);
