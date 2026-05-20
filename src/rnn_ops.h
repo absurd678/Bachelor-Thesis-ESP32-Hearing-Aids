@@ -366,6 +366,7 @@ public:
 private:
   void register_ops() {
     ensure_tflite_ok(resolver_.AddShape(), "AddShape failed");
+    ensure_tflite_ok(resolver_.AddReshape(), "AddReshape failed");
     ensure_tflite_ok(resolver_.AddStridedSlice(), "AddStridedSlice failed");
     ensure_tflite_ok(resolver_.AddTranspose(), "AddTranspose failed");
     ensure_tflite_ok(resolver_.AddUnpack(), "AddUnpack failed");
@@ -382,7 +383,7 @@ private:
   }
 
   const tflite::Model* model_;
-  tflite::MicroMutableOpResolver<14> resolver_;
+  tflite::MicroMutableOpResolver<15> resolver_;
   tflite::MicroInterpreter* interpreter_;
   TfLiteTensor* input_;
   TfLiteTensor* output_;
@@ -470,10 +471,8 @@ private:
 
     printf("loop stack watermark before RNN: %u\n",
            uxTaskGetStackHighWaterMark(NULL));
-    // model_.run(history_, gains);
-    for (int b = 0; b < kBands; ++b) {
-      gains[b] = 1.0f;
-    }
+    model_.run(history_, gains);
+    
 
     if (frame_count_ % 1000 == 0) {
       printf("frame %zu gains:", frame_count_);
