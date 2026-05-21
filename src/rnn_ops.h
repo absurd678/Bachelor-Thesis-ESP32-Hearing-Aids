@@ -417,6 +417,7 @@ public:
     memset(features, 0, sizeof(features));
     memset(gains, 0, sizeof(gains));
     input_size_ = 0;
+    bands_created = false;
     has_prev_log_bands_ = false;
     frame_count_ = 0;
     model_.init();
@@ -471,8 +472,11 @@ private:
 
     printf("loop stack watermark before RNN: %u\n",
            uxTaskGetStackHighWaterMark(NULL));
-    model_.run(history_, gains);
     
+    if (!bands_created){
+      model_.run(history_, gains);
+      bands_created = true;
+    }
 
     if (frame_count_ % 1000 == 0) {
       printf("frame %zu gains:", frame_count_);
@@ -524,6 +528,7 @@ private:
   float ola_norm_[kOlaCapacity];
   float history_[kSeqLen][kFeatures];
   float prev_log_bands_[kBands];
+  float bands_created;
   size_t input_size_;
   bool has_prev_log_bands_;
   size_t frame_count_;
