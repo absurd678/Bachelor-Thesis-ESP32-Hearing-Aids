@@ -33,6 +33,11 @@ static constexpr int kBandBins[kBands + 1] = {
     2, 3, 6, 11, 17, 26, 36, 53, 85
 };
 
+static float last_gains[kBands] = {
+  1.0f, 1.0f, 1.0f, 1.0f,
+  1.0f, 1.0f, 1.0f, 1.0f
+};
+
 static float clamp01(float x) {
   if (x < 0.0f) return 0.0f;
   if (x > 1.0f) return 1.0f;
@@ -473,9 +478,11 @@ private:
     printf("loop stack watermark before RNN: %u\n",
            uxTaskGetStackHighWaterMark(NULL));
     
-    if (!bands_created){
+    if ((frame_count_ % 64) == 0){
       model_.run(history_, gains);
-      bands_created = true;
+    }
+    for (int b = 0; b < kBands; ++b) {
+      gains[b] = last_gains[b];
     }
 
     if (frame_count_ % 1000 == 0) {
